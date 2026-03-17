@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.albion-online-data.com)",
+      "WebFetch(domain:albionfreemarket.com)",
+      "WebFetch(domain:wiki.albiononline.com)",
+      "Bash(npm install:*)",
+      "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(npm view:*)",
+      "Bash(npx next:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:www.tools4albion.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:forum.albiononline.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:albiononline2d.com)",
+      "WebFetch(domain:openalbion.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:www.albiondatabase.com)",
+      "WebFetch(domain:gameinfo.albiononline.com)",
+      "WebFetch(domain:west.albion-online-data.com)",
+      "WebFetch(domain:itemlevel.net)"
+    ]
+  }
+}

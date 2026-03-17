@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 38 90% 47%;
+    --primary-foreground: 222 47% 8%;
+    --secondary: 222 47% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 47% 15%;
+    --muted-foreground: 215 16% 55%;
+    --accent: 222 47% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 222 47% 20%;
+    --input: 222 47% 17%;
+    --ring: 38 90% 47%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Table styles */
+.albion-table {
+  @apply w-full text-sm;
+}
+.albion-table th {
+  @apply px-4 py-3 text-left font-medium text-muted-foreground border-b border-border;
+}
+.albion-table td {
+  @apply px-4 py-3 border-b border-border/50;
+}
+.albion-table tr:hover td {
+  @apply bg-secondary/30;
+}

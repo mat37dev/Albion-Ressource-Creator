@@ -1,0 +1,152 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "transport": "Transport",
+    "craft": "Craft",
+    "flipper": "Flipper",
+    "blackMarket": "Black Market",
+    "settings": "Paramètres"
+  },
+  "home": {
+    "title": "AlbionCreator",
+    "subtitle": "Opportunités économiques pour Albion Online",
+    "description": "Identifiez les meilleures opportunités de profit : transport inter-cités, craft rentable, market flipping et Black Market arbitrage.",
+    "cards": {
+      "transport": {
+        "title": "Transport Arbitrage",
+        "description": "Achetez bas dans une ville, vendez haut dans une autre. Trouvez les meilleures routes de transport."
+      },
+      "craft": {
+        "title": "Calculateur de Craft",
+        "description": "Calculez la rentabilité du craft en tenant compte des bonus de villes, du focus et de votre spécialisation."
+      },
+      "flipper": {
+        "title": "Market Flipper",
+        "description": "Achetez des ordres de vente et revendez plus cher dans la même ville. Trouvez les meilleures marges."
+      },
+      "blackMarket": {
+        "title": "Black Market",
+        "description": "Achetez en ville et vendez au Black Market de Caerleon. Maximisez vos profits d'arbitrage."
+      }
+    },
+    "stats": {
+      "cities": "villes supportées",
+      "update": "mise à jour",
+      "minutes": "toutes les 30 min",
+      "free": "gratuit"
+    }
+  },
+  "transport": {
+    "title": "Transport Arbitrage",
+    "description": "Trouvez les meilleures opportunités de transport entre les villes",
+    "filters": {
+      "minProfit": "Profit minimum",
+      "tax": "Taxe (%)",
+      "fromCity": "Ville de départ",
+      "toCity": "Ville d'arrivée",
+      "allCities": "Toutes les villes",
+      "apply": "Appliquer"
+    },
+    "table": {
+      "item": "Item",
+      "from": "De",
+      "to": "Vers",
+      "buyPrice": "Prix d'achat",
+      "sellPrice": "Prix de vente",
+      "profit": "Profit",
+      "profitPercent": "Profit %"
+    },
+    "loading": "Chargement des prix...",
+    "noData": "Aucune opportunité trouvée. Essayez d'ajuster les filtres.",
+    "error": "Erreur lors du chargement des données. Réessayez."
+  },
+  "craft": {
+    "title": "Calculateur de Craft",
+    "description": "Calculez la rentabilité du craft avec les bonus de villes",
+    "form": {
+      "item": "Item à crafter",
+      "tier": "Tier",
+      "enchant": "Enchantement",
+      "city": "Ville de craft",
+      "focus": "Utiliser le focus",
+      "specialization": "Spécialisation (0-100)",
+      "calculate": "Calculer",
+      "selectItem": "Sélectionnez un item..."
+    },
+    "results": {
+      "materialCost": "Coût matériaux",
+      "returnRate": "Taux de retour",
+      "materialsReturned": "Matériaux retournés",
+      "craftingFee": "Frais de craft",
+      "totalCost": "Coût total",
+      "sellPrice": "Prix de vente (net)",
+      "profit": "Profit net",
+      "roi": "ROI"
+    },
+    "cityBonus": "Bonus ville (+15% craft)",
+    "noRecipe": "Pas de recette disponible pour cet item."
+  },
+  "flipper": {
+    "title": "Market Flipper",
+    "description": "Trouvez les meilleures opportunités de flip dans chaque ville",
+    "filters": {
+      "city": "Ville",
+      "minMargin": "Marge minimum",
+      "category": "Catégorie",
+      "allCategories": "Toutes catégories",
+      "apply": "Appliquer"
+    },
+    "table": {
+      "item": "Item",
+      "buyOrder": "Ordre d'achat",
+      "sellOrder": "Ordre de vente",
+      "margin": "Marge",
+      "marginPercent": "Marge %",
+      "quality": "Qualité"
+    },
+    "loading": "Chargement...",
+    "noData": "Aucune opportunité de flip trouvée.",
+    "error": "Erreur lors du chargement."
+  },
+  "blackMarket": {
+    "title": "Black Market Arbitrage",
+    "description": "Achetez en ville, vendez au Black Market de Caerleon",
+    "info": "Le Black Market à Caerleon achète des items via des ordres d'achat générés par les loots des donjons.",
+    "filters": {
+      "fromCity": "Acheter à",
+      "minProfit": "Profit minimum",
+      "apply": "Appliquer"
+    },
+    "table": {
+      "item": "Item",
+      "buyCity": "Ville d'achat",
+      "localPrice": "Prix local",
+      "bmBuyOrder": "Ordre BM",
+      "profit": "Profit",
+      "profitPercent": "Profit %"
+    },
+    "loading": "Chargement...",
+    "noData": "Aucune opportunité Black Market trouvée.",
+    "error": "Erreur lors du chargement."
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "retry": "Réessayer",
+    "noData": "Aucune donnée",
+    "search": "Rechercher...",
+    "quality": {
+      "1": "Normal",
+      "2": "Bon",
+      "3": "Remarquable",
+      "4": "Excellent",
+      "5": "Œuvre maîtresse"
+    },
+    "silver": "argent",
+    "lastUpdated": "Dernière mise à jour"
+  },
+  "footer": {
+    "disclaimer": "Ce site n'est pas affilié avec Sandbox Interactive ou Albion Online.",
+    "dataSource": "Données fournies par l'API Albion Online Data Project."
+  }
+}
