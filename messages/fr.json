@@ -148,5 +148,45 @@
   "footer": {
     "disclaimer": "Ce site n'est pas affilié avec Sandbox Interactive ou Albion Online.",
     "dataSource": "Données fournies par l'API Albion Online Data Project."
+  },
+  "admin": {
+    "items": {
+      "title": "Explorateur d'items (Admin)",
+      "description": "Parcourez tous les items disponibles sur le site",
+      "filters": {
+        "title": "Filtres",
+        "reset": "Réinitialiser",
+        "search": "Recherche",
+        "searchPlaceholder": "Nom ou ID...",
+        "category": "Catégorie",
+        "allCategories": "Toutes les catégories",
+        "subcategory": "Sous-catégorie",
+        "allSubcategories": "Toutes",
+        "tier": "Tier",
+        "allTiers": "Tous les tiers",
+        "enchant": "Enchantement",
+        "allEnchants": "Tous",
+        "base": "Base",
+        "totalItems": "Total items :",
+        "displayed": "Affichés :"
+      },
+      "results": {
+        "found": "item(s) trouvé(s)",
+        "noResults": "Aucun item trouvé avec ces filtres",
+        "tierGroup": "Tier {tier} ({count} items)"
+      },
+      "details": {
+        "title": "Item sélectionné",
+        "nameEN": "Nom (EN)",
+        "nameFR": "Nom (FR)",
+        "id": "ID",
+        "tier": "Tier",
+        "enchant": "Enchantement",
+        "category": "Catégorie",
+        "subcategory": "Sous-catégorie",
+        "set": "Set",
+        "artifact": "Artifact"
+      }
+    }
   }
 }

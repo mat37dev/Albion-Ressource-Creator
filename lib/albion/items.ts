@@ -1,9 +1,16 @@
 /**
- * Compatibility layer — wraps the new itemsList.ts for use in existing components.
+ * Compatibility layer — wraps the new items/ module for use in existing components.
  * Components that already use AlbionItem / COMMON_ITEMS continue to work unchanged.
  */
 
-import { getAllItems, searchItemDefs, type AlbionItemDef } from "./itemsList";
+import {
+  getAllItems,
+  searchItems as searchNewItems,
+  parseItemId as parseNewId,
+  getItemIconUrl as getNewIconUrl,
+  getItemIconUrlsByTier as getNewIconUrlsByTier,
+  type AlbionItem as NewAlbionItem,
+} from "./items/index";
 
 export interface AlbionItem {
   UniqueName: string;
@@ -11,19 +18,19 @@ export interface AlbionItem {
   LocalizedDescriptions: Record<string, string> | null;
 }
 
-function defToItem(def: AlbionItemDef): AlbionItem {
+function newToOld(item: NewAlbionItem): AlbionItem {
   return {
-    UniqueName: def.id,
+    UniqueName: item.id,
     LocalizedNames: {
-      "EN-US": def.nameEN,
-      "FR-FR": def.nameFR,
+      "EN-US": item.nameEN,
+      "FR-FR": item.nameFR,
     },
     LocalizedDescriptions: null,
   };
 }
 
-/** Full list of ~1 700 items (resources T1-T8 + equipment T4-T8 with enchants) */
-export const COMMON_ITEMS: AlbionItem[] = getAllItems().map(defToItem);
+/** Full list of all items */
+export const COMMON_ITEMS: AlbionItem[] = getAllItems().map(newToOld);
 
 export async function loadItems(): Promise<AlbionItem[]> {
   return COMMON_ITEMS;
@@ -35,7 +42,7 @@ export function searchItems(
   locale: string = "EN-US"
 ): AlbionItem[] {
   const l = locale === "fr" || locale === "FR-FR" ? "fr" : "en";
-  return searchItemDefs(query, l).map(defToItem);
+  return searchNewItems(query, l).map(newToOld);
 }
 
 export function getItemName(item: AlbionItem, locale: string = "EN-US"): string {
@@ -58,10 +65,23 @@ export function getItemsByCategory(items: AlbionItem[], category: string): Albio
 
 /** Parses "T4_MAIN_SWORD@2" → { tier: 4, baseId: "T4_MAIN_SWORD", enchant: 2 } */
 export function parseItemId(id: string): { tier: number; baseId: string; enchant: number } {
-  const enchantMatch = id.match(/@(\d)$/);
-  const enchant = enchantMatch ? parseInt(enchantMatch[1]) : 0;
-  const baseId = enchantMatch ? id.replace(/@\d$/, "") : id;
-  const tierMatch = id.match(/^T(\d+)_/);
-  const tier = tierMatch ? parseInt(tierMatch[1]) : 0;
-  return { tier, baseId, enchant };
+  return parseNewId(id);
+}
+
+/** Génère l'URL de l'icône d'un item depuis le CDN officiel d'Albion Online */
+export function getItemIconUrl(
+  itemOrId: AlbionItem | string,
+  options?: import("./items/types").ItemIconOptions
+): string {
+  const id = typeof itemOrId === "string" ? itemOrId : itemOrId.UniqueName;
+  return getNewIconUrl(id, options);
+}
+
+/** Génère plusieurs URLs d'icônes pour différents tiers d'un même item */
+export function getItemIconUrlsByTier(
+  baseItemId: string,
+  tiers?: number[],
+  options?: import("./items/types").ItemIconOptions
+): Record<number, string> {
+  return getNewIconUrlsByTier(baseItemId, tiers, options);
 }

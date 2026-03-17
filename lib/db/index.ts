@@ -2,19 +2,27 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-// Only create DB connection if DATABASE_URL is set
-let db: ReturnType<typeof drizzle> | null = null;
+// Vercel Postgres uses pgbouncer, so we need prepare: false
+const connectionString =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL;
 
+if (!connectionString) {
+  throw new Error(
+    "DATABASE_URL, POSTGRES_PRISMA_URL, or POSTGRES_URL environment variable must be set"
+  );
+}
+
+// Create client with pgbouncer compatibility
+const client = postgres(connectionString, {
+  prepare: false, // Required for Vercel Postgres with pgbouncer
+});
+
+export const db = drizzle(client, { schema });
+
+// Legacy compatibility
 export function getDb() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL environment variable is not set");
-  }
-
-  if (!db) {
-    const client = postgres(process.env.DATABASE_URL);
-    db = drizzle(client, { schema });
-  }
-
   return db;
 }
 

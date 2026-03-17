@@ -1,4 +1,4 @@
-import { BASE_RRR, CITY_REFINE_BONUS, CITY_CRAFT_BONUS } from "../../constants/bonuses";
+import { BASE_RRR, CITY_REFINE_BONUS } from "../../constants/bonuses";
 import type { City } from "../../constants/cities";
 import type { ResourceType, WeaponCategory, ArmorCategory } from "../../constants/bonuses";
 

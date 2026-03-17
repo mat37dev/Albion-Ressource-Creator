@@ -23,7 +23,18 @@
       "WebFetch(domain:www.albiondatabase.com)",
       "WebFetch(domain:gameinfo.albiononline.com)",
       "WebFetch(domain:west.albion-online-data.com)",
-      "WebFetch(domain:itemlevel.net)"
+      "WebFetch(domain:itemlevel.net)",
+      "*",
+      "Bash(rm:*)",
+      "Bash(claude skill:*)",
+      "Bash(find ~/.claude -name *skill* -type f)",
+      "WebFetch(domain:skills.sh)",
+      "Read(//mnt/c/Users/mcrosnier/Documents/project/**)",
+      "Bash(npx skillsadd:*)",
+      "Bash(git clone:*)",
+      "Bash(npx skills:*)",
+      "Bash(pkill -f \"npx skills\")",
+      "WebFetch(domain:www.albiononline2d.com)"
     ]
   }
 }

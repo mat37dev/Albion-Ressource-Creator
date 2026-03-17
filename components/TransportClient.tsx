@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { CITIES, type City } from "@/lib/constants/cities";
+import { CITIES } from "@/lib/constants/cities";
 import { findTransportOpportunities } from "@/lib/albion/calculations/transport";
 import { COMMON_ITEMS, getItemName } from "@/lib/albion/items";
 import { formatSilver, formatPercent, getProfitColor } from "@/lib/utils";

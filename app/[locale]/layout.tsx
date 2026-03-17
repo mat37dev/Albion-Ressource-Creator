@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { Header } from "@/components/Header";
 import "../globals.css";
+import React from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { getPopularScanItems } from "@/lib/albion/itemsList";
 import { getItemDefById } from "@/lib/albion/itemsList";
 import { findTransportOpportunities } from "@/lib/albion/calculations/transport";
