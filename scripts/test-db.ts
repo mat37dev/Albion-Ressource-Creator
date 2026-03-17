@@ -4,6 +4,9 @@
  * Usage: tsx scripts/test-db.ts
  */
 
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig(process.cwd());
+
 import { db } from '../lib/db/index';
 import { albionItems, albionSyncMetadata } from '../lib/db/schema';
 import { sql, count } from 'drizzle-orm';

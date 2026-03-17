@@ -8,6 +8,9 @@
  *   npm run sync:items -- --dry-run  (pour tester sans écrire en DB)
  */
 
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig(process.cwd());
+
 import { db } from '../lib/db/index';
 import { albionItems, albionSyncMetadata } from '../lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -19,8 +22,9 @@ const DRY_RUN = process.argv.includes('--dry-run');
 // TYPES
 // ─────────────────────────────────────────────
 
-interface LocalizationData {
-  [key: string]: {
+interface AlbionItemData {
+  UniqueName: string;
+  LocalizedNames?: {
     'EN-US'?: string;
     'FR-FR'?: string;
     'DE-DE'?: string;
@@ -142,41 +146,18 @@ function isArtifact(id: string): boolean {
 // FETCHERS
 // ─────────────────────────────────────────────
 
-async function fetchItemsList(): Promise<string[]> {
-  console.log('📥 Fetching items list from GitHub...');
+async function fetchItemsData(): Promise<AlbionItemData[]> {
+  console.log('📥 Fetching items data from GitHub (formatted/items.json)...');
 
-  const response = await fetch(`${GITHUB_RAW}/formatted/items.txt`);
+  // Use the formatted items.json which includes localizations
+  const response = await fetch(`${GITHUB_RAW}/formatted/items.json`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch items: ${response.statusText}`);
-  }
-
-  const text = await response.text();
-  const lines = text.split('\n').filter(line => line.trim() && !line.startsWith('#'));
-
-  console.log(`   Found ${lines.length} item IDs`);
-  return lines;
-}
-
-async function fetchLocalizations(): Promise<LocalizationData> {
-  console.log('📥 Fetching localizations from GitHub...');
-
-  const response = await fetch(`${GITHUB_RAW}/formatted/localization.json`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch localizations: ${response.statusText}`);
+    throw new Error(`Failed to fetch items data: ${response.statusText}`);
   }
 
   const data = await response.json();
-  const itemLocalizations: LocalizationData = {};
-
-  // Filter only item-related localizations
-  for (const [key, value] of Object.entries(data)) {
-    if (typeof value === 'object' && value !== null && 'EN-US' in value) {
-      itemLocalizations[key] = value as LocalizationData[string];
-    }
-  }
-
-  console.log(`   Found ${Object.keys(itemLocalizations).length} localized entries`);
-  return itemLocalizations;
+  console.log(`   Fetched ${data.length} total items`);
+  return data;
 }
 
 // ─────────────────────────────────────────────
@@ -203,36 +184,33 @@ async function syncItems() {
       console.log(`📝 Created sync record #${syncId}`);
     }
 
-    // Fetch data
-    const [itemIds, localizations] = await Promise.all([
-      fetchItemsList(),
-      fetchLocalizations(),
-    ]);
+    // Fetch unified data
+    const itemsData = await fetchItemsData();
 
     console.log('');
     console.log('🔄 Processing items...');
 
     let processed = 0;
     let inserted = 0;
-    let updated = 0;
     let skipped = 0;
 
     const batchSize = 100;
     const batches = [];
 
-    for (let i = 0; i < itemIds.length; i += batchSize) {
-      const batch = itemIds.slice(i, i + batchSize);
+    for (let i = 0; i < itemsData.length; i += batchSize) {
+      const batch = itemsData.slice(i, i + batchSize);
       batches.push(batch);
     }
 
     for (const [batchIndex, batch] of batches.entries()) {
       const itemsToUpsert = [];
 
-      for (const itemId of batch) {
+      for (const itemData of batch) {
+        const itemId = itemData.UniqueName;
         const { tier, enchant } = parseItemId(itemId);
 
-        // Skip invalid items
-        if (tier === 0 || tier > 8) {
+        // Skip invalid items or tokens/system items
+        if (tier === 0 || tier > 8 || itemId.startsWith('QUESTITEM_')) {
           skipped++;
           continue;
         }
@@ -240,10 +218,7 @@ async function syncItems() {
         const category = detectCategory(itemId);
         const subcategory = detectSubcategory(itemId);
 
-        // Get localized names (use @ITEMS prefix for items)
-        const locKey = `@ITEMS_${itemId}`;
-        const loc = localizations[locKey] || localizations[itemId] || {};
-
+        const loc = itemData.LocalizedNames || {};
         const nameEN = loc['EN-US'] || itemId;
         const nameFR = loc['FR-FR'] || nameEN;
 
@@ -305,7 +280,7 @@ async function syncItems() {
 
       if ((batchIndex + 1) % 10 === 0 || batchIndex === batches.length - 1) {
         const progress = ((batchIndex + 1) / batches.length * 100).toFixed(1);
-        console.log(`   Progress: ${progress}% (${processed}/${itemIds.length} items)`);
+        console.log(`   Progress: ${progress}% (${processed}/${itemsData.length} items)`);
       }
     }
 

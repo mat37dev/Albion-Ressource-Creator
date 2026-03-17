@@ -2,42 +2,41 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import {
-  getAllItems,
-  filterItems,
-  getCategoriesMetadata,
-  getItemName,
-  type AlbionItem,
-  type ItemCategory,
-  type ItemFilters,
-} from "@/lib/albion/items/index";
+import { getCategoriesMetadata } from "@/lib/albion/items/index";
+import { useAlbionItems } from "@/lib/hooks/useAlbionItems";
+import type { AlbionItem } from "@/lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, X, Filter } from "lucide-react";
+import { Search, X, Filter, Loader2 } from "lucide-react";
 import { ItemIcon } from "@/components/ui/item-icon";
 
 export function AdminItemsBrowser() {
   const t = useTranslations("admin.items");
   const locale = useLocale();
   const localeCode = locale === "fr" ? "fr" : "en";
-  const [filters, setFilters] = useState<ItemFilters>({
-    category: undefined,
-    subcategory: undefined,
-    tier: undefined,
-    enchant: undefined,
-    search: "",
-  });
+  const [category, setCategory] = useState<string | undefined>(undefined);
+  const [subcategory, setSubcategory] = useState<string | undefined>(undefined);
+  const [tier, setTier] = useState<number | undefined>(undefined);
+  const [enchant, setEnchant] = useState<number | undefined>(undefined);
+  const [search, setSearch] = useState("");
   const [selectedItem, setSelectedItem] = useState<AlbionItem | null>(null);
 
   const categories = getCategoriesMetadata();
-  const selectedCategory = categories.find((c) => c.id === filters.category);
+  const selectedCategory = categories.find((c) => c.id === category);
 
-  const items = useMemo(() => {
-    return filterItems(filters);
-  }, [filters]);
+  // Charger les items depuis la DB via l'API
+  const { items, total, isLoading, error } = useAlbionItems({
+    category,
+    subcategory,
+    tier,
+    enchant,
+    search: search.length > 0 ? search : undefined,
+    locale: localeCode,
+    limit: 1000,
+  });
 
   const itemsByTier = useMemo(() => {
     const grouped: Record<number, AlbionItem[]> = {};
@@ -49,16 +48,12 @@ export function AdminItemsBrowser() {
   }, [items]);
 
   const resetFilters = () => {
-    setFilters({
-      category: undefined,
-      subcategory: undefined,
-      tier: undefined,
-      enchant: undefined,
-      search: "",
-    });
+    setCategory(undefined);
+    setSubcategory(undefined);
+    setTier(undefined);
+    setEnchant(undefined);
+    setSearch("");
   };
-
-  const totalItems = getAllItems().length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -93,8 +88,8 @@ export function AdminItemsBrowser() {
                 <Input
                   type="text"
                   placeholder={t("filters.searchPlaceholder")}
-                  value={filters.search || ""}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -106,14 +101,11 @@ export function AdminItemsBrowser() {
                 {t("filters.category")}
               </label>
               <Select
-                value={filters.category || "all"}
-                onValueChange={(value) =>
-                  setFilters({
-                    ...filters,
-                    category: value === "all" ? undefined : (value as ItemCategory),
-                    subcategory: undefined,
-                  })
-                }
+                value={category || "all"}
+                onValueChange={(value) => {
+                  setCategory(value === "all" ? undefined : value);
+                  setSubcategory(undefined);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t("filters.allCategories")} />
@@ -136,12 +128,9 @@ export function AdminItemsBrowser() {
                   {t("filters.subcategory")}
                 </label>
                 <Select
-                  value={filters.subcategory || "all"}
+                  value={subcategory || "all"}
                   onValueChange={(value) =>
-                    setFilters({
-                      ...filters,
-                      subcategory: value === "all" ? undefined : value,
-                    })
+                    setSubcategory(value === "all" ? undefined : value)
                   }
                 >
                   <SelectTrigger>
@@ -165,12 +154,9 @@ export function AdminItemsBrowser() {
                 {t("filters.tier")}
               </label>
               <Select
-                value={filters.tier?.toString() || "all"}
+                value={tier?.toString() || "all"}
                 onValueChange={(value) =>
-                  setFilters({
-                    ...filters,
-                    tier: value === "all" ? undefined : parseInt(value),
-                  })
+                  setTier(value === "all" ? undefined : parseInt(value))
                 }
               >
                 <SelectTrigger>
@@ -193,12 +179,9 @@ export function AdminItemsBrowser() {
                 {t("filters.enchant")}
               </label>
               <Select
-                value={filters.enchant?.toString() || "all"}
+                value={enchant?.toString() || "all"}
                 onValueChange={(value) =>
-                  setFilters({
-                    ...filters,
-                    enchant: value === "all" ? undefined : parseInt(value),
-                  })
+                  setEnchant(value === "all" ? undefined : parseInt(value))
                 }
               >
                 <SelectTrigger>
@@ -220,7 +203,9 @@ export function AdminItemsBrowser() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("filters.totalItems")}</span>
-                  <span className="font-semibold text-albion-gold">{totalItems}</span>
+                  <span className="font-semibold text-albion-gold">
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : total}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("filters.displayed")}</span>
@@ -241,7 +226,17 @@ export function AdminItemsBrowser() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {items.length === 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-albion-gold" />
+                <span className="ml-2 text-muted-foreground">Chargement...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12 text-red-500">
+                <p>❌ Erreur lors du chargement des items</p>
+                <p className="text-sm mt-2">{error.message}</p>
+              </div>
+            ) : items.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <p>{t("results.noResults")}</p>
               </div>
@@ -268,7 +263,7 @@ export function AdminItemsBrowser() {
                             <div className="flex items-start gap-3">
                               {/* Item Icon */}
                               <ItemIcon
-                                item={item}
+                                item={item.id}
                                 size={48}
                                 locale={localeCode}
                                 showTooltip={false}
@@ -278,7 +273,7 @@ export function AdminItemsBrowser() {
                               <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-white truncate">
-                                    {getItemName(item, localeCode)}
+                                    {localeCode === "fr" ? item.nameFR : item.nameEN}
                                   </p>
                                   <p className="text-xs text-muted-foreground font-mono truncate mt-1">
                                     {item.id}
@@ -319,7 +314,7 @@ export function AdminItemsBrowser() {
             <CardHeader>
               <div className="flex items-center gap-4">
                 <ItemIcon
-                  item={selectedItem}
+                  item={selectedItem.id}
                   size={80}
                   locale={localeCode}
                   showTooltip={false}
