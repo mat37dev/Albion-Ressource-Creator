@@ -10,4 +10,6 @@ export default {
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
+  // On ne synchronise que les tables que nous avons définies
+  tablesFilter: ["albion_items", "albion_sync_metadata", "favorites", "price_alerts", "users"],
 } satisfies Config;

@@ -1,6 +1,10 @@
+import { loadEnvConfig } from "@next/env";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+
+// Load environment variables (useful for standalone scripts)
+loadEnvConfig(process.cwd());
 
 // Vercel Postgres uses pgbouncer, so we need prepare: false
 const connectionString =
