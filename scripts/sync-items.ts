@@ -93,7 +93,12 @@ function detectCategory(id: string): string {
 function detectSubcategory(id: string): string {
   const upper = id.toUpperCase();
 
-  // Resources
+  // Armor (check BEFORE resources to avoid _CLOTH matching cloth resource)
+  if (upper.includes('_PLATE_')) return 'plate';
+  if (upper.includes('_LEATHER_')) return 'leather';
+  if (upper.includes('_CLOTH_')) return 'cloth';
+
+  // Resources (more specific patterns)
   if (upper.includes('_ORE')) return 'ore';
   if (upper.includes('_WOOD')) return 'wood';
   if (upper.includes('_FIBER')) return 'fiber';
@@ -101,8 +106,9 @@ function detectSubcategory(id: string): string {
   if (upper.includes('_ROCK')) return 'rock';
   if (upper.includes('_METALBAR')) return 'metalbar';
   if (upper.includes('_PLANKS')) return 'planks';
-  if (upper.includes('_CLOTH')) return 'cloth';
-  if (upper.includes('_LEATHER')) return 'leather';
+  // Only match resource cloth/leather if not already matched as armor
+  if (upper.match(/T\d+_CLOTH$/)) return 'cloth';
+  if (upper.match(/T\d+_LEATHER$/)) return 'leather';
   if (upper.includes('_STONEBLOCK')) return 'stoneblock';
 
   // Weapons
@@ -121,11 +127,6 @@ function detectSubcategory(id: string): string {
   if (upper.includes('CURSEDSTAFF')) return 'curse';
   if (upper.includes('HOLYSTAFF')) return 'holy';
   if (upper.includes('NATURESTAFF')) return 'nature';
-
-  // Armor
-  if (upper.includes('_PLATE_')) return 'plate';
-  if (upper.includes('_LEATHER_')) return 'leather';
-  if (upper.includes('_CLOTH_')) return 'cloth';
 
   // Consumables
   if (upper.includes('_MEAL_')) return 'food';

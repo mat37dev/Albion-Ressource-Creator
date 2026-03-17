@@ -36,7 +36,10 @@
       "Bash(pkill -f \"npx skills\")",
       "WebFetch(domain:www.albiononline2d.com)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"Add health check endpoint for debugging:*)"
+      "Bash(git commit -m \"Add health check endpoint for debugging:*)",
+      "Bash(curl -s \"http://localhost:3001/api/items?category=armor&subcategory=cloth&limit=5\")",
+      "Bash(curl -s \"http://localhost:3001/api/items?category=armor&subcategory=leather&limit=5\")",
+      "Bash(curl -s \"http://localhost:3001/api/items?category=armor&subcategory=plate&limit=5\")"
     ]
   }
 }
