@@ -34,7 +34,9 @@
       "Bash(git clone:*)",
       "Bash(npx skills:*)",
       "Bash(pkill -f \"npx skills\")",
-      "WebFetch(domain:www.albiononline2d.com)"
+      "WebFetch(domain:www.albiononline2d.com)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"Add health check endpoint for debugging:*)"
     ]
   }
 }
