@@ -1,118 +1,25 @@
 /**
- * Export central pour tous les items Albion Online
+ * Export central pour les types et utilitaires Albion Online
+ *
+ * NOTE: Les données hardcodées ont été migrées vers la base de données.
+ * Utilisez les APIs /api/items/* et les hooks useAlbionItems() pour charger les données.
  */
 
-import type { AlbionItem, ItemCategory, ItemFilters } from "./types";
-import { getAllResources, getRawResources, getRefinedResources } from "./resources";
-import { getAllArmors, getPlateArmors, getLeatherArmors, getClothArmors } from "./armors";
-import { getAllWeapons, getArtifactWeapons, getOffhands } from "./weapons";
-import { getAllConsumables, getFood, getPotions } from "./consumables";
+import type { AlbionItem, ItemCategory } from "./types";
 
 // ─────────────────────────────────────────────
-// RE-EXPORTS
+// TYPE EXPORTS
 // ─────────────────────────────────────────────
 
 export * from "./types";
-export * from "./resources";
-export * from "./armors";
-export * from "./weapons";
-export * from "./consumables";
 
 // ─────────────────────────────────────────────
-// CACHE
+// UTILITY FUNCTIONS
 // ─────────────────────────────────────────────
 
-let _allItemsCache: AlbionItem[] | null = null;
-
-export function getAllItems(): AlbionItem[] {
-  if (_allItemsCache) return _allItemsCache;
-
-  _allItemsCache = [
-    ...getAllResources(),
-    ...getAllArmors(),
-    ...getAllWeapons(),
-    ...getAllConsumables(),
-  ];
-
-  return _allItemsCache;
-}
-
-// ─────────────────────────────────────────────
-// FILTERING & SEARCH
-// ─────────────────────────────────────────────
-
-export function filterItems(filters: ItemFilters): AlbionItem[] {
-  let items = getAllItems();
-
-  if (filters.category) {
-    items = items.filter((item) => item.category === filters.category);
-  }
-
-  if (filters.subcategory) {
-    items = items.filter((item) => item.subcategory === filters.subcategory);
-  }
-
-  if (filters.tier !== undefined) {
-    items = items.filter((item) => item.tier === filters.tier);
-  }
-
-  if (filters.enchant !== undefined) {
-    items = items.filter((item) => item.enchant === filters.enchant);
-  }
-
-  if (filters.set) {
-    items = items.filter((item) => item.set === filters.set);
-  }
-
-  if (filters.search) {
-    const query = filters.search.toLowerCase();
-    items = items.filter(
-      (item) =>
-        item.nameEN.toLowerCase().includes(query) ||
-        item.nameFR.toLowerCase().includes(query) ||
-        item.id.toLowerCase().includes(query)
-    );
-  }
-
-  return items;
-}
-
-export function searchItems(query: string, locale: "fr" | "en" = "en"): AlbionItem[] {
-  if (!query.trim()) return [];
-
-  const q = query.toLowerCase();
-  const items = getAllItems();
-
-  return items.filter((item) => {
-    const name = locale === "fr" ? item.nameFR : item.nameEN;
-    return name.toLowerCase().includes(q) || item.id.toLowerCase().includes(q);
-  });
-}
-
-export function getItemById(id: string): AlbionItem | undefined {
-  return getAllItems().find((item) => item.id === id);
-}
-
-export function getItemsByCategory(category: ItemCategory): AlbionItem[] {
-  return getAllItems().filter((item) => item.category === category);
-}
-
-export function getItemsBySubcategory(subcategory: string): AlbionItem[] {
-  return getAllItems().filter((item) => item.subcategory === subcategory);
-}
-
-export function getItemsByTier(tier: number): AlbionItem[] {
-  return getAllItems().filter((item) => item.tier === tier);
-}
-
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
-
-export function getItemName(item: AlbionItem, locale: "fr" | "en" = "en"): string {
-  return locale === "fr" ? item.nameFR : item.nameEN;
-}
-
+/**
+ * Parse an Albion item ID to extract tier, base ID, and enchantment
+ */
 export function parseItemId(id: string): {
   tier: number;
   baseId: string;
@@ -127,13 +34,13 @@ export function parseItemId(id: string): {
 }
 
 // ─────────────────────────────────────────────
-// ITEM ICONS
+// ITEM ICON UTILITIES
 // ─────────────────────────────────────────────
 
 /**
  * Génère l'URL de l'icône d'un item depuis le CDN officiel d'Albion Online
  *
- * @param item - L'item Albion ou son ID
+ * @param itemOrId - L'item Albion ou son ID
  * @param options - Options de personnalisation de l'icône
  * @returns URL de l'icône PNG
  *
@@ -150,11 +57,6 @@ export function parseItemId(id: string): {
  * // Icône personnalisée
  * getItemIconUrl('T5_HEAD_PLATE_SET1', { size: 64, quality: 3 })
  * // => https://render.albiononline.com/v1/item/T5_HEAD_PLATE_SET1.png?size=64&quality=3
- *
- * // Depuis un objet AlbionItem
- * const item = getItemById('T4_MAIN_SWORD@2');
- * getItemIconUrl(item, { size: 100 })
- * // => https://render.albiononline.com/v1/item/T4_MAIN_SWORD@2.png?size=100
  * ```
  */
 export function getItemIconUrl(
@@ -226,7 +128,7 @@ export function getItemIconUrlsByTier(
 }
 
 // ─────────────────────────────────────────────
-// CATEGORIES METADATA
+// CATEGORIES METADATA (Static Data)
 // ─────────────────────────────────────────────
 
 export interface CategoryInfo {
@@ -242,6 +144,10 @@ export interface SubcategoryInfo {
   nameFR: string;
 }
 
+/**
+ * Returns static metadata about item categories and subcategories.
+ * This is NOT dynamic data - it's the canonical category structure.
+ */
 export function getCategoriesMetadata(): CategoryInfo[] {
   return [
     {
@@ -322,34 +228,4 @@ export function getCategoriesMetadata(): CategoryInfo[] {
       ],
     },
   ];
-}
-
-// ─────────────────────────────────────────────
-// POPULAR ITEMS FOR SCANS
-// ─────────────────────────────────────────────
-
-export function getPopularScanItems(): string[] {
-  const items = getAllItems();
-  return items
-    .filter((item) => {
-      // All T4-T7 resources (raw + refined)
-      if (
-        (item.category === "resource_raw" || item.category === "resource_refined") &&
-        item.tier >= 4 &&
-        item.tier <= 7
-      ) {
-        return true;
-      }
-      // T4-T6 base weapons and armor (enchant 0 and 1)
-      if (
-        (item.category === "weapon" || item.category === "armor") &&
-        item.tier >= 4 &&
-        item.tier <= 6 &&
-        item.enchant <= 1
-      ) {
-        return true;
-      }
-      return false;
-    })
-    .map((item) => item.id);
 }

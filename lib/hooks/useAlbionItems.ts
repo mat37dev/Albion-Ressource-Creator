@@ -14,6 +14,7 @@ interface ItemFilters {
   locale?: string;
   limit?: number;
   offset?: number;
+  craftable?: boolean;
 }
 
 interface ItemsResponse {
@@ -39,6 +40,7 @@ export function useAlbionItems(filters?: ItemFilters) {
   if (filters?.locale) params.set('locale', filters.locale);
   if (filters?.limit) params.set('limit', filters.limit.toString());
   if (filters?.offset) params.set('offset', filters.offset.toString());
+  if (filters?.craftable) params.set('craftable', 'true');
 
   const { data, error, isLoading, mutate } = useSWR<ItemsResponse>(
     `/api/items?${params.toString()}`,

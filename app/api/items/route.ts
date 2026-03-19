@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { albionItems } from '@/lib/db/schema';
-import { eq, and, like, sql, asc } from 'drizzle-orm';
+import { eq, and, like, sql, asc, inArray } from 'drizzle-orm';
+import { getCraftableItemIds } from '@/lib/db/queries/items';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600; // Cache 1 heure
@@ -18,9 +19,27 @@ export async function GET(request: NextRequest) {
     const locale = searchParams.get('locale') || 'en';
     const limit = parseInt(searchParams.get('limit') || '1000');
     const offset = parseInt(searchParams.get('offset') || '0');
+    const craftable = searchParams.get('craftable') === 'true';
+    const idsParam = searchParams.get('ids'); // Support batch fetch by IDs
 
     // Build conditions
     const conditions = [];
+
+    // Filter by specific IDs (batch fetch)
+    if (idsParam) {
+      const ids = idsParam.split(',').filter(id => id.length > 0);
+      if (ids.length > 0) {
+        conditions.push(inArray(albionItems.id, ids));
+      }
+    }
+
+    // Filter by craftable items
+    if (craftable) {
+      const craftableIds = await getCraftableItemIds();
+      if (craftableIds.length > 0) {
+        conditions.push(inArray(albionItems.id, craftableIds));
+      }
+    }
 
     if (category) {
       conditions.push(eq(albionItems.category, category));

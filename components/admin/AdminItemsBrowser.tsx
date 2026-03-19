@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { getCategoriesMetadata } from "@/lib/albion/items/index";
+import { getCategoriesMetadata } from "@/lib/albion/items";
 import { useAlbionItems } from "@/lib/hooks/useAlbionItems";
 import type { AlbionItem } from "@/lib/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

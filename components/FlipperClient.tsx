@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { CITIES, type City } from "@/lib/constants/cities";
 import { findFlipOpportunities } from "@/lib/albion/calculations/flip";
-import { COMMON_ITEMS, getItemName } from "@/lib/albion/items";
+import { useAlbionItems } from "@/lib/hooks/useAlbionItems";
 import { formatSilver, formatPercent, getProfitColor } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,19 +15,23 @@ import { RefreshCw, TrendingUp } from "lucide-react";
 import type { PriceData } from "@/lib/albion/api";
 import type { FlipOpportunity } from "@/lib/albion/calculations/flip";
 
-const FLIP_ITEMS = COMMON_ITEMS.map((i) => i.UniqueName);
-
 export function FlipperClient() {
   const t = useTranslations("flipper");
+
+  // Load items from DB
+  const { items: dbItems, isLoading: itemsLoading } = useAlbionItems({ limit: 100 });
+
   const [city, setCity] = useState<City>("Caerleon");
   const [minMargin, setMinMargin] = useState(5000);
   const [opportunities, setOpportunities] = useState<FlipOpportunity[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Build item names from DB items
   const itemNames = Object.fromEntries(
-    COMMON_ITEMS.map((item) => [item.UniqueName, getItemName(item, "en")])
+    dbItems.map((item) => [item.id, item.nameEN])
   );
+  const itemIds = dbItems.map((item) => item.id);
 
   const qualityLabels: Record<number, string> = {
     1: "Normal",
@@ -38,11 +42,12 @@ export function FlipperClient() {
   };
 
   const loadAndCalculate = useCallback(async () => {
+    if (itemIds.length === 0) return; // Wait for items to load
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({
-        items: FLIP_ITEMS.join(","),
+        items: itemIds.join(","),
         locations: city,
         qualities: "1,2,3",
       });
@@ -57,7 +62,7 @@ export function FlipperClient() {
     } finally {
       setLoading(false);
     }
-  }, [city, minMargin, t]);
+  }, [city, minMargin, itemIds, itemNames, t]);
 
   return (
     <div className="space-y-4">
@@ -89,9 +94,9 @@ export function FlipperClient() {
               />
             </div>
             <div className="flex items-end">
-              <Button onClick={loadAndCalculate} disabled={loading} className="w-full">
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-                {loading ? t("loading") : "Analyser"}
+              <Button onClick={loadAndCalculate} disabled={loading || itemsLoading} className="w-full">
+                <RefreshCw className={`h-4 w-4 mr-2 ${(loading || itemsLoading) ? "animate-spin" : ""}`} />
+                {itemsLoading ? "Chargement items..." : loading ? t("loading") : "Analyser"}
               </Button>
             </div>
           </div>

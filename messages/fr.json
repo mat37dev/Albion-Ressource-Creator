@@ -3,6 +3,7 @@
     "home": "Accueil",
     "transport": "Transport",
     "craft": "Craft",
+    "craftBatch": "Craft Batch",
     "flipper": "Flipper",
     "blackMarket": "Black Market",
     "settings": "Paramètres"
@@ -186,6 +187,63 @@
         "subcategory": "Sous-catégorie",
         "set": "Set",
         "artifact": "Artifact"
+      }
+    },
+    "craftBatch": {
+      "title": "Calculateur Craft Batch",
+      "description": "Planifiez le craft de plusieurs items simultanément",
+      "tabs": {
+        "items": "Choix des items",
+        "resources": "Ressources",
+        "results": "Résultats"
+      },
+      "itemSelection": {
+        "title": "Items à crafter",
+        "addItem": "Ajouter un item",
+        "removeItem": "Retirer",
+        "itemId": "Item ID",
+        "quantity": "Quantité",
+        "sellCity": "Ville de vente",
+        "sellType": "Type de vente",
+        "customPrice": "Prix personnalisé",
+        "direct": "Vente directe",
+        "order": "Ordre de vente",
+        "blackmarket": "Black Market",
+        "noItems": "Aucun item ajouté. Cliquez sur 'Ajouter un item' pour commencer."
+      },
+      "resources": {
+        "title": "Ressources nécessaires",
+        "material": "Matériau",
+        "totalQty": "Quantité totale",
+        "effectiveQty": "Qté effective (après RRR)",
+        "pricePerUnit": "Prix unitaire",
+        "totalCost": "Coût total",
+        "buyCity": "Ville d'achat",
+        "buyType": "Type d'achat",
+        "loadPrices": "Charger les prix",
+        "useFocus": "Utiliser le focus",
+        "specialization": "Spécialisation",
+        "noResources": "Ajoutez des items pour voir les ressources nécessaires"
+      },
+      "results": {
+        "title": "Résultats du batch",
+        "calculate": "Calculer",
+        "totalProfit": "Profit net total",
+        "totalCost": "Coût total",
+        "totalRevenue": "Revenu total",
+        "rrr": "Taux de retour (RRR)",
+        "itemResults": "Résultats par item",
+        "itemName": "Item",
+        "quantity": "Qté",
+        "unitProfit": "Profit/unité",
+        "totalItemProfit": "Profit total",
+        "profitPercent": "Marge %",
+        "noResults": "Cliquez sur 'Calculer' pour voir les résultats"
+      },
+      "common": {
+        "loading": "Chargement...",
+        "error": "Erreur lors du chargement",
+        "success": "Succès"
       }
     }
   }

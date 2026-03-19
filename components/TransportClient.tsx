@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { CITIES } from "@/lib/constants/cities";
 import { findTransportOpportunities } from "@/lib/albion/calculations/transport";
-import { COMMON_ITEMS, getItemName } from "@/lib/albion/items";
+import { useAlbionItems } from "@/lib/hooks/useAlbionItems";
 import { formatSilver, formatPercent, getProfitColor } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,12 @@ import { RefreshCw, ArrowRight, TrendingUp } from "lucide-react";
 import type { PriceData } from "@/lib/albion/api";
 import type { TransportOpportunity } from "@/lib/albion/calculations/transport";
 
-const TRANSPORT_ITEMS = COMMON_ITEMS.slice(0, 30).map((i) => i.UniqueName);
-
 export function TransportClient() {
   const t = useTranslations("transport");
+
+  // Load items from DB
+  const { items: dbItems, isLoading: itemsLoading } = useAlbionItems({ limit: 30 });
+
   const [prices, setPrices] = useState<PriceData[]>([]);
   const [opportunities, setOpportunities] = useState<TransportOpportunity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -28,16 +30,19 @@ export function TransportClient() {
   const [fromCity, setFromCity] = useState<string>("all");
   const [toCity, setToCity] = useState<string>("all");
 
+  // Build item names from DB items
   const itemNames = Object.fromEntries(
-    COMMON_ITEMS.map((item) => [item.UniqueName, getItemName(item, "en")])
+    dbItems.map((item) => [item.id, item.nameEN])
   );
+  const itemIds = dbItems.map((item) => item.id);
 
   const loadPrices = useCallback(async () => {
+    if (itemIds.length === 0) return; // Wait for items to load
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({
-        items: TRANSPORT_ITEMS.join(","),
+        items: itemIds.join(","),
         locations: CITIES.join(","),
         qualities: "1",
       });
@@ -50,7 +55,7 @@ export function TransportClient() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [itemIds, t]);
 
   useEffect(() => {
     loadPrices();
@@ -133,9 +138,9 @@ export function TransportClient() {
             </div>
           </div>
           <div className="mt-4 flex items-center gap-2">
-            <Button onClick={loadPrices} disabled={loading} size="sm">
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-              {loading ? t("loading") : "Refresh"}
+            <Button onClick={loadPrices} disabled={loading || itemsLoading} size="sm">
+              <RefreshCw className={`h-4 w-4 mr-2 ${(loading || itemsLoading) ? "animate-spin" : ""}`} />
+              {itemsLoading ? "Chargement items..." : loading ? t("loading") : "Refresh"}
             </Button>
             <span className="text-xs text-muted-foreground">
               {opportunities.length} opportunité(s) trouvée(s)

@@ -72,3 +72,9 @@ export const FOCUS_BONUS_MAX = 0.59;
 export const DEFAULT_TAX = 0.08;
 export const MARKET_TAX = 0.045;
 export const SETUP_FEE = 0.025;
+
+// Premium tax rates
+export const PREMIUM_TAX_DIRECT = 0.04;      // 4% vente directe premium
+export const PREMIUM_TAX_ORDER = 0.065;      // 6.5% ordre de vente premium (2.5% setup + 4%)
+export const NON_PREMIUM_TAX_DIRECT = 0.08;  // 8% vente directe standard
+export const NON_PREMIUM_TAX_ORDER = 0.105;  // 10.5% ordre de vente standard (2.5% setup + 8%)

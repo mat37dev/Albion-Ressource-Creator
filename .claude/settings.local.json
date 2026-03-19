@@ -39,7 +39,28 @@
       "Bash(git commit -m \"Add health check endpoint for debugging:*)",
       "Bash(curl -s \"http://localhost:3001/api/items?category=armor&subcategory=cloth&limit=5\")",
       "Bash(curl -s \"http://localhost:3001/api/items?category=armor&subcategory=leather&limit=5\")",
-      "Bash(curl -s \"http://localhost:3001/api/items?category=armor&subcategory=plate&limit=5\")"
+      "Bash(curl -s \"http://localhost:3001/api/items?category=armor&subcategory=plate&limit=5\")",
+      "Bash(xargs grep:*)",
+      "Bash(npx:*)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(grep -E \"\\\\.\\(ts|js|json\\)$\")",
+      "Bash(grep -r \"9832\\\\|ALL_ITEMS\\\\|FULL.*RECIPE\\\\|external.*data\" /c/Users/mcrosnier/Documents/project/Albion-Ressource-Creator --include=*.ts --include=*.md)",
+      "Bash(grep:*)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(curl -s https://api.github.com/repos/ao-data/ao-bin-dumps/contents/)",
+      "Bash(curl -s \"https://api.github.com/repos/ao-data/ao-bin-dumps/contents/items.json\")",
+      "Bash(find /c/Users/mcrosnier/Documents/project/Albion-Ressource-Creator -type f -name *.ts -path */scripts/* -o -name *script*)",
+      "Bash(curl -s \"https://gameinfo.albiononline.com/api/gameinfo/items/T4_MAIN_SWORD/data\")",
+      "Bash(curl -s https://gameinfo.albiononline.com/api/gameinfo/items/T4_METALBAR/data)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/ao-data/ao-bin-dumps/master/formatted/items.json\")",
+      "Bash(curl -s \"https://api.github.com/repos/ao-data/ao-bin-dumps/git/trees/master?recursive=1\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/ao-data/ao-bin-dumps/master/items.xml\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/ao-data/ao-bin-dumps/master/items.json\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s http://localhost:3000/api/recipes/T4_METALBAR)",
+      "Bash(find /c/Users/mcrosnier/Documents/project/Albion-Ressource-Creator -type f \\\\\\(-name *craft* -o -name *batch* \\\\\\))",
+      "Bash(wc -l components/craft-batch/*.tsx)",
+      "Bash(cd:*)"
     ]
   }
 }

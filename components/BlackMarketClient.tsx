@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { CITIES, type City } from "@/lib/constants/cities";
 import { findBlackMarketOpportunities } from "@/lib/albion/calculations/flip";
-import { COMMON_ITEMS, getItemName } from "@/lib/albion/items";
+import { useAlbionItems } from "@/lib/hooks/useAlbionItems";
 import { formatSilver, formatPercent, getProfitColor } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,27 +14,32 @@ import { RefreshCw, TrendingUp, Store } from "lucide-react";
 import type { PriceData } from "@/lib/albion/api";
 import type { FlipOpportunity } from "@/lib/albion/calculations/flip";
 
-const BM_ITEMS = COMMON_ITEMS.map((i) => i.UniqueName);
-
 export function BlackMarketClient() {
   const t = useTranslations("blackMarket");
+
+  // Load items from DB (weapons, armor, consumables for BM)
+  const { items: dbItems, isLoading: itemsLoading } = useAlbionItems({ limit: 100 });
+
   const [fromCity, setFromCity] = useState<City>("Lymhurst");
   const [minProfit, setMinProfit] = useState(5000);
   const [opportunities, setOpportunities] = useState<FlipOpportunity[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Build item names from DB items
   const itemNames = Object.fromEntries(
-    COMMON_ITEMS.map((item) => [item.UniqueName, getItemName(item, "en")])
+    dbItems.map((item) => [item.id, item.nameEN])
   );
+  const itemIds = dbItems.map((item) => item.id);
 
   const loadAndCalculate = useCallback(async () => {
+    if (itemIds.length === 0) return; // Wait for items to load
     setLoading(true);
     setError(null);
     try {
       // Fetch prices from selected city AND Caerleon (Black Market)
       const params = new URLSearchParams({
-        items: BM_ITEMS.join(","),
+        items: itemIds.join(","),
         locations: `${fromCity},Caerleon`,
         qualities: "1",
       });
@@ -61,7 +66,7 @@ export function BlackMarketClient() {
     } finally {
       setLoading(false);
     }
-  }, [fromCity, minProfit, t]);
+  }, [fromCity, minProfit, itemIds, itemNames, t]);
 
   const nonCaerleonCities = CITIES.filter((c) => c !== "Caerleon");
 
@@ -97,11 +102,11 @@ export function BlackMarketClient() {
             <div className="flex items-end">
               <Button
                 onClick={loadAndCalculate}
-                disabled={loading}
+                disabled={loading || itemsLoading}
                 className="w-full bg-red-500 hover:bg-red-600 text-white"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-                {loading ? t("loading") : "Analyser BM"}
+                <RefreshCw className={`h-4 w-4 mr-2 ${(loading || itemsLoading) ? "animate-spin" : ""}`} />
+                {itemsLoading ? "Chargement items..." : loading ? t("loading") : "Analyser BM"}
               </Button>
             </div>
           </div>

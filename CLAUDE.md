@@ -40,6 +40,11 @@ Copy `.env.local.example` to `.env.local` and fill in:
 ### Data Flow
 Client components call the internal API proxy at `/api/prices` (route: `app/api/prices/route.ts`), which forwards requests to the **Albion Online Data Project (AODP)** at `https://europe.albion-online-data.com/api/v2/stats/prices`. Prices are cached 30 minutes (`revalidate = 1800`). Requests are batched in groups of 50 items to respect API limits.
 
+**Primary Sources:**
+- **Albion Online Data Project:** [albion-online-data.com](https://www.albion-online-data.com/) (Live market prices via community client)
+- **Albion Free Market:** [albionfreemarket.com](https://albionfreemarket.com/) (Item database, recipes, and specialized tools)
+- **Albion Online 2D:** [albiononline2d.com](https://www.albiononline2d.com/en/) (Comprehensive database for items and recipes)
+
 ### Calculation Logic (`lib/albion/calculations/`)
 - **`transport.ts`** — `Profit = Sell × (1 − tax) − Buy × (1 + tax)`
 - **`flip.ts`** — `Margin = SellOrder − BuyOrder − SellOrder × 4.5%`; also handles Black Market: `Profit = BM_BuyOrder × (1 − 4.5%) − LocalSell × (1 + 2.5%)`

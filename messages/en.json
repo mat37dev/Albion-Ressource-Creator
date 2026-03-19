@@ -3,6 +3,7 @@
     "home": "Home",
     "transport": "Transport",
     "craft": "Craft",
+    "craftBatch": "Craft Batch",
     "flipper": "Flipper",
     "blackMarket": "Black Market",
     "settings": "Settings"
@@ -186,6 +187,63 @@
         "subcategory": "Subcategory",
         "set": "Set",
         "artifact": "Artifact"
+      }
+    },
+    "craftBatch": {
+      "title": "Craft Batch Calculator",
+      "description": "Plan crafting multiple items simultaneously",
+      "tabs": {
+        "items": "Item Selection",
+        "resources": "Resources",
+        "results": "Results"
+      },
+      "itemSelection": {
+        "title": "Items to Craft",
+        "addItem": "Add Item",
+        "removeItem": "Remove",
+        "itemId": "Item ID",
+        "quantity": "Quantity",
+        "sellCity": "Sell City",
+        "sellType": "Sell Type",
+        "customPrice": "Custom Price",
+        "direct": "Direct Sale",
+        "order": "Sell Order",
+        "blackmarket": "Black Market",
+        "noItems": "No items added. Click 'Add Item' to start."
+      },
+      "resources": {
+        "title": "Required Resources",
+        "material": "Material",
+        "totalQty": "Total Quantity",
+        "effectiveQty": "Effective Qty (after RRR)",
+        "pricePerUnit": "Price per Unit",
+        "totalCost": "Total Cost",
+        "buyCity": "Buy City",
+        "buyType": "Buy Type",
+        "loadPrices": "Load Prices",
+        "useFocus": "Use Focus",
+        "specialization": "Specialization",
+        "noResources": "Add items to see required resources"
+      },
+      "results": {
+        "title": "Batch Results",
+        "calculate": "Calculate",
+        "totalProfit": "Total Net Profit",
+        "totalCost": "Total Cost",
+        "totalRevenue": "Total Revenue",
+        "rrr": "Return Rate (RRR)",
+        "itemResults": "Results by Item",
+        "itemName": "Item",
+        "quantity": "Qty",
+        "unitProfit": "Profit/Unit",
+        "totalItemProfit": "Total Profit",
+        "profitPercent": "Margin %",
+        "noResults": "Click 'Calculate' to see results"
+      },
+      "common": {
+        "loading": "Loading...",
+        "error": "Error loading",
+        "success": "Success"
       }
     }
   }

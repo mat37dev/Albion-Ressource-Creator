@@ -64,6 +64,36 @@ export const albionSyncMetadata = pgTable("albion_sync_metadata", {
   errorMessage: text("error_message"),
 });
 
+// ─────────────────────────────────────────────
+// CRAFT RECIPES
+// ─────────────────────────────────────────────
+
+export const craftRecipes = pgTable("craft_recipes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  outputItemId: text("output_item_id").notNull(),
+  outputQuantity: integer("output_quantity").notNull().default(1),
+  category: text("category").notNull(), // weapon, armor, resource
+  tier: integer("tier").notNull(),
+  enchantmentLevel: integer("enchantment_level").notNull().default(0), // 0-4
+  craftingFeeBase: real("crafting_fee_base").notNull().default(0.1125),
+  craftingTime: real("crafting_time"), // en secondes
+  craftingFocus: integer("crafting_focus"), // focus requis
+  silverCost: real("silver_cost"), // coût en argent
+  variantGroup: text("variant_group"), // Pour items royaux: groupe les 3 variantes
+  variantName: text("variant_name"), // "Soldier", "Knight", "Guardian"
+  isDefault: boolean("is_default").default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const craftRecipeMaterials = pgTable("craft_recipe_materials", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  recipeId: uuid("recipe_id").notNull().references(() => craftRecipes.id, { onDelete: "cascade" }),
+  materialItemId: text("material_item_id").notNull(),
+  quantity: integer("quantity").notNull(),
+  sortOrder: integer("sort_order").default(0),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Favorite = typeof favorites.$inferSelect;
@@ -72,3 +102,7 @@ export type AlbionItem = typeof albionItems.$inferSelect;
 export type NewAlbionItem = typeof albionItems.$inferInsert;
 export type AlbionSyncMetadata = typeof albionSyncMetadata.$inferSelect;
 export type NewAlbionSyncMetadata = typeof albionSyncMetadata.$inferInsert;
+export type CraftRecipe = typeof craftRecipes.$inferSelect;
+export type NewCraftRecipe = typeof craftRecipes.$inferInsert;
+export type CraftRecipeMaterial = typeof craftRecipeMaterials.$inferSelect;
+export type NewCraftRecipeMaterial = typeof craftRecipeMaterials.$inferInsert;

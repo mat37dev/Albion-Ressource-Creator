@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { getPopularScanItems } from "@/lib/albion/itemsList";
-import { getItemDefById } from "@/lib/albion/itemsList";
 import { findTransportOpportunities } from "@/lib/albion/calculations/transport";
 import { findFlipOpportunities, findBlackMarketOpportunities } from "@/lib/albion/calculations/flip";
 import { formatSilver, formatPercent } from "@/lib/utils";
@@ -37,14 +35,7 @@ interface UnifiedOpportunity {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function buildItemNames(ids: string[]): Record<string, string> {
-  const map: Record<string, string> = {};
-  for (const id of ids) {
-    const def = getItemDefById(id);
-    map[id] = def ? def.nameEN : id;
-  }
-  return map;
-}
+// No helper needed - names come directly from API
 
 const TYPE_CONFIG: Record<
   OpportunityType,
@@ -82,12 +73,20 @@ export function TopOpportunities() {
     setLoading(true);
     setError(null);
     try {
-      const scanItems = getPopularScanItems(); // ~200 items (T4-T6 resources + equipment)
-      const itemNames = buildItemNames(scanItems);
+      // Fetch popular items from DB (~200 items: T4-T6 resources + equipment)
+      const popularRes = await fetch('/api/items/popular');
+      if (!popularRes.ok) throw new Error("Failed to fetch popular items");
+      const { items: popularItems, itemIds } = await popularRes.json();
+
+      // Build item names map from DB items
+      const itemNames: Record<string, string> = {};
+      for (const item of popularItems) {
+        itemNames[item.id] = item.nameEN; // Could use nameFR based on locale
+      }
 
       // Fetch prices for all cities in one call (batched internally)
       const params = new URLSearchParams({
-        items: scanItems.join(","),
+        items: itemIds.join(","),
         locations: CITIES.join(","),
         qualities: "1",
       });
