@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { albionItems } from '@/lib/db/schema';
-import { eq, and, like, sql, asc, inArray } from 'drizzle-orm';
+import { eq, and, ilike, or, sql, asc, inArray } from 'drizzle-orm';
 import { getCraftableItemIds } from '@/lib/db/queries/items';
 
 export const dynamic = 'force-dynamic';
@@ -59,11 +59,15 @@ export async function GET(request: NextRequest) {
 
     if (search && search.length > 0) {
       const searchTerm = `%${search}%`;
-      if (locale === 'fr') {
-        conditions.push(like(albionItems.nameFR, searchTerm));
-      } else {
-        conditions.push(like(albionItems.nameEN, searchTerm));
-      }
+      // Use OR to search in both locale-specific name AND item ID (case-insensitive)
+      conditions.push(
+        or(
+          ilike(albionItems.id, searchTerm),
+          locale === 'fr' 
+            ? ilike(albionItems.nameFR, searchTerm) 
+            : ilike(albionItems.nameEN, searchTerm)
+        )
+      );
     }
 
     // Build query

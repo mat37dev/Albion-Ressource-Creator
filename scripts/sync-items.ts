@@ -52,17 +52,12 @@ function parseItemId(id: string): { tier: number; enchant: number; baseId: strin
 function detectCategory(id: string): string {
   const upper = id.toUpperCase();
 
-  // Resources
-  if (upper.includes('_ORE') || upper.includes('_WOOD') || upper.includes('_FIBER') ||
-      upper.includes('_HIDE') || upper.includes('_ROCK')) {
-    return 'resource_raw';
-  }
-  if (upper.includes('_METALBAR') || upper.includes('_PLANKS') || upper.includes('_CLOTH') ||
-      upper.includes('_LEATHER') || upper.includes('_STONEBLOCK')) {
-    return 'resource_refined';
+  // 1. Armor (Check FIRST to avoid _CLOTH/_LEATHER matching resources)
+  if (upper.includes('_HEAD_') || upper.includes('_ARMOR_') || upper.includes('_SHOES_')) {
+    return 'armor';
   }
 
-  // Weapons
+  // 2. Weapons
   if (upper.includes('_MAIN_') || upper.includes('_2H_')) {
     if (upper.includes('SWORD') || upper.includes('AXE') || upper.includes('MACE') ||
         upper.includes('HAMMER') || upper.includes('SPEAR') || upper.includes('DAGGER') ||
@@ -72,17 +67,22 @@ function detectCategory(id: string): string {
     }
   }
 
-  // Armor
-  if (upper.includes('_HEAD_') || upper.includes('_ARMOR_') || upper.includes('_SHOES_')) {
-    return 'armor';
+  // 3. Resources
+  if (upper.includes('_ORE') || upper.includes('_WOOD') || upper.includes('_FIBER') ||
+      upper.includes('_HIDE') || upper.includes('_ROCK')) {
+    return 'resource_raw';
+  }
+  if (upper.includes('_METALBAR') || upper.includes('_PLANKS') || upper.includes('_CLOTH') ||
+      upper.includes('_LEATHER') || upper.includes('_STONEBLOCK')) {
+    return 'resource_refined';
   }
 
-  // Offhand
+  // 4. Offhand
   if (upper.includes('_OFF_')) {
     return 'offhand';
   }
 
-  // Consumables
+  // 5. Consumables
   if (upper.includes('_MEAL_') || upper.includes('_POTION_')) {
     return 'consumable';
   }
