@@ -42,7 +42,8 @@ ARC s'appuie sur la force de la communauté Albion pour vous fournir les donnée
 ---
 
 <p align="center">
-  <i>"Achetez bas, vendez haut, et laissez l'argent couler."</i>
+  <i>"Business is business !"</i>
+  <br>
   <br>
   <b><a href="https://albion-ressource-creator.vercel.app/">Lancer ARC maintenant 🚀</a></b>
 </p>
