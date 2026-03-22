@@ -15,10 +15,23 @@ export async function GET(
   const enchantLevel = searchParams.get("enchant");
 
   try {
-    // Si un niveau d'enchantement est spécifié
-    if (enchantLevel !== null) {
-      const level = parseInt(enchantLevel);
-      const recipe = await getRecipeByItemAndEnchant(itemId, level);
+    // Si on veut toutes les variantes (enchantements)
+    if (includeVariants) {
+      const variants = await getRecipeVariants(itemId);
+      return NextResponse.json({ variants });
+    }
+
+    // Déterminer le niveau d'enchantement : depuis ?enchant= ou depuis le suffixe @N de l'itemId
+    const enchantSuffix = itemId.match(/@(\d)$/);
+    const resolvedEnchantLevel = enchantLevel !== null
+      ? parseInt(enchantLevel)
+      : enchantSuffix
+        ? parseInt(enchantSuffix[1])
+        : null;
+
+    if (resolvedEnchantLevel !== null && resolvedEnchantLevel > 0) {
+      const baseItemId = itemId.replace(/@\d$/, '');
+      const recipe = await getRecipeByItemAndEnchant(baseItemId, resolvedEnchantLevel);
 
       if (!recipe) {
         return NextResponse.json(
@@ -30,13 +43,7 @@ export async function GET(
       return NextResponse.json(recipe);
     }
 
-    // Si on veut toutes les variantes (enchantements)
-    if (includeVariants) {
-      const variants = await getRecipeVariants(itemId);
-      return NextResponse.json({ variants });
-    }
-
-    // Sinon, récupérer la recette par défaut (enchant 0)
+    // Recette de base (enchant 0)
     const recipe = await getRecipeForItem(itemId);
 
     if (!recipe) {

@@ -130,17 +130,12 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
     }
   };
 
-  // Update price when city or type changes
+  // Update price when city changes
   const handleCityChange = async (batchItemId: string, itemId: string, newCity: SellCity) => {
-    const updates: Partial<Parameters<typeof craftBatch.updateItemConfig>[1]> = { sellCity: newCity };
-    // Black Market → force sellType blackmarket
-    if (newCity === "Black Market") {
-      updates.sellType = "blackmarket";
-    }
-    craftBatch.updateItemConfig(batchItemId, updates);
+    craftBatch.updateItemConfig(batchItemId, { sellCity: newCity });
 
-    // Fetch price for the selected city only
     try {
+      const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
       const params = new URLSearchParams({
         items: itemId,
         locations: newCity,
@@ -151,22 +146,22 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
 
       const prices = await res.json();
       const cityPrice = prices[0];
-      if (!cityPrice) return;
 
-      const effectiveSellType = newCity === "Black Market" ? "blackmarket" : batchItem.sellType ?? "order";
-      const newPrice =
-        effectiveSellType === 'order' ? cityPrice.sell_price_min :
-        cityPrice.buy_price_max;
+      // Black Market → toujours buy_price_max (vente à un ordre d'achat)
+      const sellType = batchItem?.sellType ?? "order";
+      const newPrice = cityPrice
+        ? (newCity === "Black Market" || sellType === 'direct')
+          ? cityPrice.buy_price_max
+          : cityPrice.sell_price_min
+        : 0;
 
-      if (newPrice > 0) {
-        craftBatch.updateItemConfig(batchItemId, { customSellPrice: newPrice });
-      }
+      craftBatch.updateItemConfig(batchItemId, { customSellPrice: newPrice });
     } catch (error) {
       console.error("Error updating price:", error);
     }
   };
 
-  const handleTypeChange = async (batchItemId: string, itemId: string, newType: 'direct' | 'order' | 'blackmarket') => {
+  const handleTypeChange = async (batchItemId: string, itemId: string, newType: 'direct' | 'order') => {
     craftBatch.updateItemConfig(batchItemId, { sellType: newType });
 
     // Fetch price for the current city only
@@ -184,15 +179,11 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
 
       const prices = await res.json();
       const cityPrice = prices[0];
-      if (!cityPrice) return;
+      const newPrice = cityPrice
+        ? newType === 'order' ? cityPrice.sell_price_min : cityPrice.buy_price_max
+        : 0;
 
-      const newPrice =
-        newType === 'order' ? cityPrice.sell_price_min :
-        cityPrice.buy_price_max;
-
-      if (newPrice > 0) {
-        craftBatch.updateItemConfig(batchItemId, { customSellPrice: newPrice });
-      }
+      craftBatch.updateItemConfig(batchItemId, { customSellPrice: newPrice });
     } catch (error) {
       console.error("Error updating price:", error);
     }
@@ -356,7 +347,7 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
                     <TableCell>
                       <Select
                         value={item.sellType}
-                        onValueChange={(type) => handleTypeChange(item.id, item.itemId, type as 'direct' | 'order' | 'blackmarket')}
+                        onValueChange={(type) => handleTypeChange(item.id, item.itemId, type as 'direct' | 'order')}
                       >
                         <SelectTrigger className="w-36">
                           <SelectValue />
@@ -364,7 +355,6 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
                         <SelectContent>
                           <SelectItem value="direct">Vente directe</SelectItem>
                           <SelectItem value="order">Ordre de vente</SelectItem>
-                          <SelectItem value="blackmarket">Black Market</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
