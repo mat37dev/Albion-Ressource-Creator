@@ -12,7 +12,7 @@ export async function calculateBatchProfit(
   locale: "en" | "fr" = "en"
 ): Promise<CraftBatchResult> {
   const itemResults: CraftItemResult[] = [];
-  const { isPremium } = batchState.globalSettings;
+  const { isPremium, craftingFeePercent = 0 } = batchState.globalSettings;
 
   // Fetch all item names in one batch request
   const allItemIds = [
@@ -61,11 +61,16 @@ export async function calculateBatchProfit(
 
     const netSellPrice = sellPrice * (1 - taxRate);
 
+    // Frais de station (% du prix de vente brut, payé au moment du craft)
+    const craftingFeePerUnit = sellPrice * (craftingFeePercent / 100);
+    const totalCraftingFee = craftingFeePerUnit * item.quantity;
+
     // Profit
     const totalNetRevenue = netSellPrice * item.quantity;
-    const totalProfit = totalNetRevenue - itemMaterialCost;
+    const totalCost = itemMaterialCost + totalCraftingFee;
+    const totalProfit = totalNetRevenue - totalCost;
     const unitProfit = totalProfit / item.quantity;
-    const profitPercent = itemMaterialCost > 0 ? (totalProfit / itemMaterialCost) * 100 : 0;
+    const profitPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
 
     itemResults.push({
       batchItemId: item.id,
@@ -75,7 +80,7 @@ export async function calculateBatchProfit(
       unitProfit,
       totalProfit,
       profitPercent,
-      materialCost: itemMaterialCost,
+      materialCost: totalCost,
       sellPrice: sellPrice * item.quantity,
       netSellPrice: totalNetRevenue,
       sellCity: item.sellCity,

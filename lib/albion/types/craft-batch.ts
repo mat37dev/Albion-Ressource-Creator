@@ -29,6 +29,7 @@ export interface CraftBatchState {
   globalSettings: {
     useFocus: boolean;
     isPremium: boolean; // Compte Premium (taxes réduites)
+    craftingFeePercent: number; // Frais de station (% du prix de vente, 0-10%)
   };
   journals?: {
     use: boolean;

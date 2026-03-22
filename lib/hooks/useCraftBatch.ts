@@ -10,6 +10,7 @@ export function useCraftBatch() {
     globalSettings: {
       useFocus: false,
       isPremium: false,
+      craftingFeePercent: 0,
     },
     journals: {
       use: false,
@@ -196,19 +197,40 @@ export function useCraftBatch() {
 
   // Sélection automatique des meilleures villes/prix
   const autoSelectBestPrices = useCallback((priceMap: Map<string, PriceData[]>) => {
-    // Pour chaque item: trouver ville avec meilleur sell order price
     setBatchState(prev => {
+      const { isPremium } = prev.globalSettings;
+      const directTax = isPremium ? 0.04 : 0.08;   // vente instantanée à un ordre d'achat
+      const orderTax  = isPremium ? 0.065 : 0.105; // listing au prix minimum du marché
+
       const updatedItems = prev.items.map(item => {
         const prices = priceMap.get(item.itemId) || [];
-        const bestSellPrice = prices
+
+        // Vente directe = on remplit le meilleur ordre d'achat existant (buy_price_max)
+        const bestDirect = prices
+          .filter(p => p.buy_price_max > 0)
+          .sort((a, b) => b.buy_price_max - a.buy_price_max)[0];
+
+        // Ordre de vente = on liste au prix compétitif (sell_price_min)
+        const bestOrder = prices
           .filter(p => p.sell_price_min > 0)
           .sort((a, b) => b.sell_price_min - a.sell_price_min)[0];
 
-        if (bestSellPrice) {
+        const directNet = bestDirect ? bestDirect.buy_price_max * (1 - directTax) : 0;
+        const orderNet  = bestOrder  ? bestOrder.sell_price_min * (1 - orderTax)  : 0;
+
+        if (directNet >= orderNet && bestDirect) {
           return {
             ...item,
-            sellCity: bestSellPrice.city as City,
-            customSellPrice: bestSellPrice.sell_price_min,
+            sellCity: bestDirect.city as City,
+            sellType: 'direct' as const,
+            customSellPrice: bestDirect.buy_price_max,
+          };
+        } else if (bestOrder) {
+          return {
+            ...item,
+            sellCity: bestOrder.city as City,
+            sellType: 'order' as const,
+            customSellPrice: bestOrder.sell_price_min,
           };
         }
         return item;

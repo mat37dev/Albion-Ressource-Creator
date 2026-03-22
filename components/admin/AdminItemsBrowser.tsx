@@ -39,10 +39,11 @@ export function AdminItemsBrowser() {
   });
 
   const itemsByTier = useMemo(() => {
-    const grouped: Record<number, AlbionItem[]> = {};
+    const grouped: Record<string, AlbionItem[]> = {};
     items.forEach((item) => {
-      if (!grouped[item.tier]) grouped[item.tier] = [];
-      grouped[item.tier].push(item);
+      const key = `${item.tier}-${item.enchant}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
     });
     return grouped;
   }, [items]);
@@ -243,11 +244,18 @@ export function AdminItemsBrowser() {
             ) : (
               <div className="space-y-6">
                 {Object.entries(itemsByTier)
-                  .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                  .map(([tier, tierItems]) => (
-                    <div key={tier}>
+                  .sort(([a], [b]) => {
+                    const [at, ae] = a.split("-").map(Number);
+                    const [bt, be] = b.split("-").map(Number);
+                    if (at !== bt) return at - bt;
+                    return ae - be;
+                  })
+                  .map(([key, tierItems]) => {
+                    const [tier, enchant] = key.split("-").map(Number);
+                    return (
+                    <div key={key}>
                       <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                        Tier {tier} ({tierItems.length} items)
+                        Tier {tier}{enchant > 0 ? ` .${enchant}` : ""} ({tierItems.length} items)
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {tierItems.slice(0, 100).map((item) => (
@@ -302,7 +310,8 @@ export function AdminItemsBrowser() {
                         </p>
                       )}
                     </div>
-                  ))}
+                  );
+                  })}
               </div>
             )}
           </CardContent>

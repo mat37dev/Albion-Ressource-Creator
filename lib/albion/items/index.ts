@@ -25,10 +25,21 @@ export function parseItemId(id: string): {
   baseId: string;
   enchant: number;
 } {
-  const enchantMatch = id.match(/@(\d)$/);
-  const enchant = enchantMatch ? parseInt(enchantMatch[1]) : 0;
-  const baseId = enchantMatch ? id.replace(/@\d$/, "") : id;
-  const tierMatch = id.match(/^T(\d+)_/);
+  // Try @ format (e.g. T5_CLOTH@1)
+  let enchantMatch = id.match(/@(\d)$/);
+  let enchant = enchantMatch ? parseInt(enchantMatch[1]) : 0;
+  let baseId = enchantMatch ? id.replace(/@\d$/, "") : id;
+
+  // Try _LEVEL format if @ not found (e.g. T5_CLOTH_LEVEL1)
+  if (enchant === 0) {
+    enchantMatch = id.match(/_LEVEL(\d)$/);
+    if (enchantMatch) {
+      enchant = parseInt(enchantMatch[1]);
+      baseId = id.replace(/_LEVEL\d$/, "");
+    }
+  }
+
+  const tierMatch = baseId.match(/^T(\d+)_/);
   const tier = tierMatch ? parseInt(tierMatch[1]) : 0;
   return { tier, baseId, enchant };
 }

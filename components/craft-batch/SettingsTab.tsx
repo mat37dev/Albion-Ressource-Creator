@@ -128,7 +128,41 @@ export function SettingsTab({ craftBatch }: SettingsTabProps) {
         </CardContent>
       </Card>
 
-      {/* Section 2: Registres (Journals) - Feature preview */}
+      {/* Section 2: Frais de station */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-5 w-5 text-albion-gold" />
+            <CardTitle>Frais de station de craft</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 border rounded-lg bg-albion-blue/5">
+            <Label className="text-base font-semibold mb-2 block">
+              Frais de station : {craftBatch.batchState.globalSettings.craftingFeePercent ?? 0}%
+            </Label>
+            <p className="text-xs text-muted-foreground mb-3">
+              Pourcentage du prix de vente payé au propriétaire de la station (0% = station personnelle, ~1-3% = station publique).
+            </p>
+            <Slider
+              value={[craftBatch.batchState.globalSettings.craftingFeePercent ?? 0]}
+              onValueChange={([value]) =>
+                craftBatch.updateGlobalSettings({ craftingFeePercent: value })
+              }
+              min={0}
+              max={10}
+              step={0.5}
+              className="flex-1"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>0% (propre station)</span>
+              <span>10%</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section 3: Registres (Journals) - Feature preview */}
       <Card className="border-dashed opacity-60">
         <CardHeader>
           <div className="flex items-center gap-2">

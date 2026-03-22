@@ -92,12 +92,13 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
         let bestOrder = { price: 0, city: "Lymhurst" as City };
 
         prices.forEach((p: any) => {
-          // Ignore prices at 0 (no data from API)
-          if (p.sell_price_min > 0 && p.sell_price_min > bestDirect.price) {
-            bestDirect = { price: p.sell_price_min, city: p.city as City };
+          // Vente directe = on remplit le meilleur ordre d'achat (buy_price_max)
+          if (p.buy_price_max > 0 && p.buy_price_max > bestDirect.price) {
+            bestDirect = { price: p.buy_price_max, city: p.city as City };
           }
-          if (p.sell_price_max > 0 && p.sell_price_max > bestOrder.price) {
-            bestOrder = { price: p.sell_price_max, city: p.city as City };
+          // Ordre de vente = on liste au prix compétitif (sell_price_min)
+          if (p.sell_price_min > 0 && p.sell_price_min > bestOrder.price) {
+            bestOrder = { price: p.sell_price_min, city: p.city as City };
           }
         });
 
@@ -151,10 +152,10 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
       if (!batchItem) return;
 
       let newPrice = 0;
-      if (batchItem.sellType === 'direct' && cityPrice.sell_price_min > 0) {
+      if (batchItem.sellType === 'direct' && cityPrice.buy_price_max > 0) {
+        newPrice = cityPrice.buy_price_max;
+      } else if (batchItem.sellType === 'order' && cityPrice.sell_price_min > 0) {
         newPrice = cityPrice.sell_price_min;
-      } else if (batchItem.sellType === 'order' && cityPrice.sell_price_max > 0) {
-        newPrice = cityPrice.sell_price_max;
       } else if (batchItem.sellType === 'blackmarket' && cityPrice.buy_price_max > 0) {
         newPrice = cityPrice.buy_price_max;
       }
@@ -188,10 +189,10 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
       if (!cityPrice) return;
 
       let newPrice = 0;
-      if (newType === 'direct' && cityPrice.sell_price_min > 0) {
+      if (newType === 'direct' && cityPrice.buy_price_max > 0) {
+        newPrice = cityPrice.buy_price_max;
+      } else if (newType === 'order' && cityPrice.sell_price_min > 0) {
         newPrice = cityPrice.sell_price_min;
-      } else if (newType === 'order' && cityPrice.sell_price_max > 0) {
-        newPrice = cityPrice.sell_price_max;
       } else if (newType === 'blackmarket' && cityPrice.buy_price_max > 0) {
         newPrice = cityPrice.buy_price_max;
       }

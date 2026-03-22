@@ -57,19 +57,24 @@ export function ItemSelector({
     craftable: filters.craftable,
   });
 
-  // Group items by tier
+  // Group items by tier+enchant (key: "tier-enchant")
   const itemsByTier = useMemo(() => {
-    const grouped: Record<number, AlbionItem[]> = {};
+    const grouped: Record<string, AlbionItem[]> = {};
     items.forEach((item) => {
-      if (!grouped[item.tier]) grouped[item.tier] = [];
-      grouped[item.tier].push(item);
+      const key = `${item.tier}-${item.enchant}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
     });
     return grouped;
   }, [items]);
 
   const sortedTiers = Object.keys(itemsByTier)
-    .map(Number)
-    .sort((a, b) => b - a);
+    .sort((a, b) => {
+      const [at, ae] = a.split("-").map(Number);
+      const [bt, be] = b.split("-").map(Number);
+      if (at !== bt) return bt - at;
+      return ae - be;
+    });
 
   return (
     <div className={cn("grid grid-cols-1 lg:grid-cols-3 gap-6", className)}>
@@ -116,20 +121,22 @@ export function ItemSelector({
               </div>
             )}
 
-            {/* Items grouped by tier */}
+            {/* Items grouped by tier+enchant */}
             <div className="space-y-6">
-              {sortedTiers.map((tier) => (
-                <div key={tier}>
+              {sortedTiers.map((key) => {
+                const [tier, enchant] = key.split("-").map(Number);
+                return (
+                <div key={key}>
                   <div className="flex items-center gap-2 mb-3">
                     <Badge variant="outline" className="text-xs">
-                      Tier {tier}
+                      Tier {tier}{enchant > 0 ? ` @${enchant}` : ""}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      ({itemsByTier[tier].length} items)
+                      ({itemsByTier[key].length} items)
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {itemsByTier[tier].map((item) => {
+                    {itemsByTier[key].map((item) => {
                       const isSelected = selectedItems.has(item.id);
                       return (
                         <div
@@ -147,6 +154,11 @@ export function ItemSelector({
                             <div className="text-sm font-medium text-white truncate">
                               {localeCode === "fr" ? item.nameFR : item.nameEN}
                             </div>
+                            {item.enchant > 0 && (
+                              <div className="text-xs text-albion-gold font-bold">
+                                @{item.enchant}
+                              </div>
+                            )}
                           </div>
                           {showAddButton && (
                             <div className="shrink-0">
@@ -162,7 +174,8 @@ export function ItemSelector({
                     })}
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </CardContent>
         </Card>

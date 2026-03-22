@@ -13,7 +13,7 @@ loadEnvConfig(process.cwd());
 
 import { db } from '../lib/db/index';
 import { craftRecipes, craftRecipeMaterials } from '../lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, like, notLike } from 'drizzle-orm';
 
 const GITHUB_RAW = 'https://raw.githubusercontent.com/ao-data/ao-bin-dumps/master';
 const DRY_RUN = process.argv.includes('--dry-run');
@@ -25,6 +25,7 @@ const DRY_RUN = process.argv.includes('--dry-run');
 interface CraftResource {
   '@uniquename': string;
   '@count': string;
+  '@enchantmentlevel'?: string;
 }
 
 interface CraftingRequirements {
@@ -37,6 +38,7 @@ interface CraftingRequirements {
 
 interface AlbionItemData {
   '@uniquename': string;
+  '@enchantmentlevel'?: string;
   craftingrequirements?: CraftingRequirements | CraftingRequirements[];
   enchantments?: {
     enchantment?: Array<{
@@ -138,6 +140,24 @@ function normalizeCraftResources(craftresource: CraftResource | CraftResource[])
   return Array.isArray(craftresource) ? craftresource : [craftresource];
 }
 
+/**
+ * Normalize an item ID to match the format used in albionItems (from formatted/items.json).
+ * items.json uses 'T4_PLANKS_LEVEL1' with @enchantmentlevel="1"
+ * formatted/items.json uses 'T4_PLANKS_LEVEL1@1'
+ * We must append '@{level}' to match the IDs stored in the DB.
+ */
+function normalizeItemId(uniquename: string, enchantmentLevel: number): string {
+  if (enchantmentLevel > 0 && !uniquename.includes('@')) {
+    return `${uniquename}@${enchantmentLevel}`;
+  }
+  return uniquename;
+}
+
+function normalizeMaterialId(material: CraftResource): string {
+  const level = parseInt(material['@enchantmentlevel'] || '0');
+  return normalizeItemId(material['@uniquename'], level);
+}
+
 // ─────────────────────────────────────────────
 // MAIN
 // ─────────────────────────────────────────────
@@ -155,6 +175,23 @@ async function syncRecipes() {
   let errors = 0;
 
   try {
+    // 0. Clean up old wrong-format LEVEL records (T4_PLANKS_LEVEL1 without @suffix)
+    if (!DRY_RUN) {
+      const orphans = await db
+        .select({ id: craftRecipes.id })
+        .from(craftRecipes)
+        .where(and(like(craftRecipes.outputItemId, '%_LEVEL%'), notLike(craftRecipes.outputItemId, '%@%')));
+
+      if (orphans.length > 0) {
+        console.log(`🧹 Suppression de ${orphans.length} recettes orphelines (mauvais format LEVEL sans @)...`);
+        for (const orphan of orphans) {
+          await db.delete(craftRecipeMaterials).where(eq(craftRecipeMaterials.recipeId, orphan.id));
+          await db.delete(craftRecipes).where(eq(craftRecipes.id, orphan.id));
+        }
+        console.log('   ✅ Nettoyage terminé\n');
+      }
+    }
+
     // 1. Fetch items.json (root, not formatted - contains crafting data)
     console.log("📥 Téléchargement de items.json...");
     const itemsUrl = `${GITHUB_RAW}/items.json`;
@@ -184,8 +221,13 @@ async function syncRecipes() {
 
     // 3. Process each craftable item
     for (const item of craftableItems) {
-      const itemId = item['@uniquename'];
-      const { tier, baseId, enchant } = parseItemId(itemId);
+      const rawItemId = item['@uniquename'];
+      // items.json stores enchanted resources as 'T4_PLANKS_LEVEL1' with @enchantmentlevel="1"
+      // but albionItems stores them as 'T4_PLANKS_LEVEL1@1' (from formatted/items.json)
+      const itemEnchantLevel = parseInt(item['@enchantmentlevel'] || '0');
+      const itemId = normalizeItemId(rawItemId, itemEnchantLevel);
+
+      const { tier } = parseItemId(itemId);
       const category = detectCategory(itemId);
       const { variantGroup, variantName } = detectVariantInfo(itemId);
 
@@ -196,7 +238,7 @@ async function syncRecipes() {
       }
 
       try {
-        // Process base recipe (enchant 0)
+        // Process base recipe (or enchanted resource recipe stored directly on item)
         if (item.craftingrequirements) {
           // craftingrequirements can be an array (multiple recipes) - take the first one
           const reqs = Array.isArray(item.craftingrequirements)
@@ -212,14 +254,14 @@ async function syncRecipes() {
               outputQuantity: parseInt(req['@amountcrafted'] || '1'),
               category,
               tier,
-              enchantmentLevel: 0,
+              enchantmentLevel: itemEnchantLevel,
               craftingTime: req['@time'] ? parseFloat(req['@time']) : null,
               craftingFocus: req['@craftingfocus'] ? parseInt(req['@craftingfocus']) : null,
               silverCost: req['@silver'] ? parseFloat(req['@silver']) : null,
               variantGroup,
               variantName,
               materials: materials.map((m, idx) => ({
-                materialItemId: m['@uniquename'],
+                materialItemId: normalizeMaterialId(m),
                 quantity: parseInt(m['@count']),
                 sortOrder: idx,
               })),
@@ -249,7 +291,9 @@ async function syncRecipes() {
 
               if (req && req.craftresource) {
                 const materials = normalizeCraftResources(req.craftresource);
-                const enchantedItemId = `${itemId}@${enchantLevel}`;
+                // itemId is already normalized (e.g. 'T4_MAIN_SWORD', no @suffix for base)
+                // For weapons/armor enchanted via enchantments block: append @enchantLevel
+                const enchantedItemId = `${rawItemId}@${enchantLevel}`;
 
                 await insertOrUpdateRecipe({
                   outputItemId: enchantedItemId,
@@ -263,7 +307,7 @@ async function syncRecipes() {
                   variantGroup,
                   variantName,
                   materials: materials.map((m, idx) => ({
-                    materialItemId: m['@uniquename'],
+                    materialItemId: normalizeMaterialId(m),
                     quantity: parseInt(m['@count']),
                     sortOrder: idx,
                   })),

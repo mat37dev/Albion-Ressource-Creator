@@ -41,10 +41,21 @@ interface AlbionItemData {
 // ─────────────────────────────────────────────
 
 function parseItemId(id: string): { tier: number; enchant: number; baseId: string } {
-  const enchantMatch = id.match(/@(\d)$/);
-  const enchant = enchantMatch ? parseInt(enchantMatch[1]) : 0;
-  const baseId = enchantMatch ? id.replace(/@\d$/, '') : id;
-  const tierMatch = id.match(/^T(\d+)_/);
+  // Try @ format (e.g. T5_CLOTH@1)
+  let enchantMatch = id.match(/@(\d)$/);
+  let enchant = enchantMatch ? parseInt(enchantMatch[1]) : 0;
+  let baseId = enchantMatch ? id.replace(/@\d$/, '') : id;
+
+  // Try _LEVEL format if @ not found (e.g. T5_CLOTH_LEVEL1)
+  if (enchant === 0) {
+    enchantMatch = id.match(/_LEVEL(\d)$/);
+    if (enchantMatch) {
+      enchant = parseInt(enchantMatch[1]);
+      baseId = id.replace(/_LEVEL\d$/, "");
+    }
+  }
+
+  const tierMatch = baseId.match(/^T(\d+)_/);
   const tier = tierMatch ? parseInt(tierMatch[1]) : 0;
   return { tier, baseId, enchant };
 }
@@ -106,9 +117,10 @@ function detectSubcategory(id: string): string {
   if (upper.includes('_ROCK')) return 'rock';
   if (upper.includes('_METALBAR')) return 'metalbar';
   if (upper.includes('_PLANKS')) return 'planks';
-  // Only match resource cloth/leather if not already matched as armor
-  if (upper.match(/T\d+_CLOTH$/)) return 'cloth';
-  if (upper.match(/T\d+_LEATHER$/)) return 'leather';
+  // Match resource cloth/leather if not already matched as armor
+  // Now includes optional enchantment @1, @2, etc.
+  if (upper.match(/T\d+_CLOTH(@\d)?$/)) return 'cloth';
+  if (upper.match(/T\d+_LEATHER(@\d)?$/)) return 'leather';
   if (upper.includes('_STONEBLOCK')) return 'stoneblock';
 
   // Weapons
