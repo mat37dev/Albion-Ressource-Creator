@@ -139,35 +139,24 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
     }
     craftBatch.updateItemConfig(batchItemId, updates);
 
-    // Fetch prices and update based on current sell type
+    // Fetch price for the selected city only
     try {
-      const fetchLocations = newCity === "Black Market"
-        ? "Black Market"
-        : CITIES.join(",");
       const params = new URLSearchParams({
         items: itemId,
-        locations: fetchLocations,
+        locations: newCity,
         qualities: "1",
       });
       const res = await fetch(`/api/prices?${params}`);
       if (!res.ok) return;
 
       const prices = await res.json();
-      const cityPrice = prices.find((p: any) => p.city === newCity);
+      const cityPrice = prices[0];
       if (!cityPrice) return;
 
-      const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
-      if (!batchItem) return;
-
-      const effectiveSellType = newCity === "Black Market" ? "blackmarket" : batchItem.sellType;
-      let newPrice = 0;
-      if (effectiveSellType === 'direct' && cityPrice.buy_price_max > 0) {
-        newPrice = cityPrice.buy_price_max;
-      } else if (effectiveSellType === 'order' && cityPrice.sell_price_min > 0) {
-        newPrice = cityPrice.sell_price_min;
-      } else if (effectiveSellType === 'blackmarket' && cityPrice.buy_price_max > 0) {
-        newPrice = cityPrice.buy_price_max;
-      }
+      const effectiveSellType = newCity === "Black Market" ? "blackmarket" : batchItem.sellType ?? "order";
+      const newPrice =
+        effectiveSellType === 'order' ? cityPrice.sell_price_min :
+        cityPrice.buy_price_max;
 
       if (newPrice > 0) {
         craftBatch.updateItemConfig(batchItemId, { customSellPrice: newPrice });
@@ -180,31 +169,26 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
   const handleTypeChange = async (batchItemId: string, itemId: string, newType: 'direct' | 'order' | 'blackmarket') => {
     craftBatch.updateItemConfig(batchItemId, { sellType: newType });
 
-    // Fetch prices and update based on new type
+    // Fetch price for the current city only
     try {
+      const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
+      if (!batchItem) return;
+
       const params = new URLSearchParams({
         items: itemId,
-        locations: CITIES.join(","),
+        locations: batchItem.sellCity,
         qualities: "1",
       });
       const res = await fetch(`/api/prices?${params}`);
       if (!res.ok) return;
 
       const prices = await res.json();
-      const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
-      if (!batchItem) return;
-
-      const cityPrice = prices.find((p: any) => p.city === batchItem.sellCity);
+      const cityPrice = prices[0];
       if (!cityPrice) return;
 
-      let newPrice = 0;
-      if (newType === 'direct' && cityPrice.buy_price_max > 0) {
-        newPrice = cityPrice.buy_price_max;
-      } else if (newType === 'order' && cityPrice.sell_price_min > 0) {
-        newPrice = cityPrice.sell_price_min;
-      } else if (newType === 'blackmarket' && cityPrice.buy_price_max > 0) {
-        newPrice = cityPrice.buy_price_max;
-      }
+      const newPrice =
+        newType === 'order' ? cityPrice.sell_price_min :
+        cityPrice.buy_price_max;
 
       if (newPrice > 0) {
         craftBatch.updateItemConfig(batchItemId, { customSellPrice: newPrice });
