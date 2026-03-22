@@ -62,7 +62,9 @@
       "Bash(wc -l components/craft-batch/*.tsx)",
       "Bash(cd:*)",
       "Bash(cd \"C:\\\\Users\\\\mathi\\\\Documents\\\\AlbionCreator\" && npx tsx -e \"\nasync function check\\(\\) {\n  const res = await fetch\\('https://raw.githubusercontent.com/ao-data/ao-bin-dumps/master/formatted/items.json'\\);\n  const data = await res.json\\(\\);\n  \n  const refinedEnchanted = data.filter\\(\\(item: any\\) => {\n    const id: string = item.UniqueName || '';\n    return id.includes\\('@'\\) && \\(\n      id.includes\\('_METALBAR'\\) || id.includes\\('_PLANKS'\\) || \n      id.includes\\('_CLOTH'\\) || id.includes\\('_LEATHER'\\) || \n      id.includes\\('_STONEBLOCK'\\)\n    \\);\n  }\\);\n  \n  console.log\\('Enchanted refined resources in source:', refinedEnchanted.length\\);\n  console.log\\('Examples:', refinedEnchanted.slice\\(0, 5\\).map\\(\\(i: any\\) => i.UniqueName\\)\\);\n}\ncheck\\(\\).catch\\(console.error\\);\n\" 2>&1)",
-      "Bash(cd \"C:\\\\Users\\\\mathi\\\\Documents\\\\AlbionCreator\" && npx tsc --noEmit 2>&1 | grep -v \"drizzle.config\" && rm \"C:\\\\Users\\\\mathi\\\\Documents\\\\AlbionCreator\\\\scripts\\\\check-recipes.ts\")"
+      "Bash(cd \"C:\\\\Users\\\\mathi\\\\Documents\\\\AlbionCreator\" && npx tsc --noEmit 2>&1 | grep -v \"drizzle.config\" && rm \"C:\\\\Users\\\\mathi\\\\Documents\\\\AlbionCreator\\\\scripts\\\\check-recipes.ts\")",
+      "WebFetch(domain:europe.albion-online-data.com)",
+      "Bash(curl:*)"
     ]
   }
 }

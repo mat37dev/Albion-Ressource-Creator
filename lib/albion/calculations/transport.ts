@@ -11,12 +11,14 @@ export interface TransportOpportunity {
   profit: number;
   profitPercent: number;
   tax: number;
+  updatedAt: string; // La plus ancienne des deux dates (buy/sell) — indique la fraîcheur réelle
 }
 
 export interface TransportCalculationOptions {
-  tax?: number; // Default 8%
+  tax?: number;
   minProfit?: number;
-  minVolume?: number;
+  buyType?: "direct" | "order"; // direct = acheter aux sell orders (sell_price_min) ; order = placer un buy order (buy_price_max)
+  sellType?: "direct" | "order"; // direct = vendre aux buy orders (buy_price_max) ; order = placer un sell order (sell_price_min)
 }
 
 export function calculateTransportProfit(
@@ -46,7 +48,7 @@ export function findTransportOpportunities(
   itemNames: Record<string, string>,
   options: TransportCalculationOptions = {}
 ): TransportOpportunity[] {
-  const { tax = 0.08, minProfit = 1000 } = options;
+  const { tax = 0.08, minProfit = 1000, buyType = "direct", sellType = "order" } = options;
   const opportunities: TransportOpportunity[] = [];
 
   // Group prices by item
@@ -57,38 +59,40 @@ export function findTransportOpportunities(
   }
 
   for (const [itemId, itemPrices] of Object.entries(byItem)) {
-    // Compare all city pairs
     for (const buyData of itemPrices) {
-      if (!buyData.sell_price_min || buyData.sell_price_min === 0) continue;
+      // Prix d'achat selon le type choisi
+      const buyPrice = buyType === "direct" ? buyData.sell_price_min : buyData.buy_price_max;
+      const buyDate  = buyType === "direct" ? buyData.sell_price_min_date : buyData.buy_price_max_date;
+      if (!buyPrice || buyPrice === 0) continue;
 
       for (const sellData of itemPrices) {
         if (sellData.city === buyData.city) continue;
-        if (!sellData.sell_price_min || sellData.sell_price_min === 0) continue;
 
-        const profit = calculateTransportProfit(
-          buyData.sell_price_min,
-          sellData.sell_price_min,
-          tax
-        );
+        // Prix de vente selon le type choisi
+        const sellPrice = sellType === "direct" ? sellData.buy_price_max : sellData.sell_price_min;
+        const sellDate  = sellType === "direct" ? sellData.buy_price_max_date : sellData.sell_price_min_date;
+        if (!sellPrice || sellPrice === 0) continue;
 
+        const profit = calculateTransportProfit(buyPrice, sellPrice, tax);
         if (profit < minProfit) continue;
 
-        const profitPercent = calculateTransportProfitPercent(
-          buyData.sell_price_min,
-          sellData.sell_price_min,
-          tax
-        );
+        const profitPercent = calculateTransportProfitPercent(buyPrice, sellPrice, tax);
+
+        const updatedAt = new Date(
+          Math.min(new Date(buyDate).getTime(), new Date(sellDate).getTime())
+        ).toISOString();
 
         opportunities.push({
           itemId,
           itemName: itemNames[itemId] || itemId,
           buyCity: buyData.city as City,
           sellCity: sellData.city as City,
-          buyPrice: buyData.sell_price_min,
-          sellPrice: sellData.sell_price_min,
+          buyPrice,
+          sellPrice,
           profit,
           profitPercent,
           tax,
+          updatedAt,
         });
       }
     }

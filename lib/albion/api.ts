@@ -35,7 +35,7 @@ async function fetchBatch(
   const url = `${AODP_BASE_URL}/${itemsParam}?locations=${locationsParam}&qualities=${qualitiesParam}`;
 
   const response = await fetch(url, {
-    next: { revalidate: 1800 }, // 30 min cache
+    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -56,17 +56,18 @@ export async function fetchPrices({
     batches.push(items.slice(i, i + BATCH_SIZE));
   }
 
-  // Fetch all batches
-  const results = await Promise.allSettled(
-    batches.map((batch) => fetchBatch(batch, locations, qualities))
-  );
-
+  // Fetch batches séquentiellement pour éviter le rate-limit AODP (429)
   const allPrices: PriceData[] = [];
-  for (const result of results) {
-    if (result.status === "fulfilled") {
-      allPrices.push(...result.value);
-    } else {
-      console.error("Batch fetch failed:", result.reason);
+  for (let i = 0; i < batches.length; i++) {
+    try {
+      const result = await fetchBatch(batches[i], locations, qualities);
+      allPrices.push(...result);
+    } catch (err) {
+      console.error("Batch fetch failed:", err);
+    }
+    // Délai entre batches si plusieurs (respecte le rate-limit)
+    if (i < batches.length - 1) {
+      await new Promise((r) => setTimeout(r, 300));
     }
   }
 

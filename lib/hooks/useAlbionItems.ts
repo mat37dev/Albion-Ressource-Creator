@@ -9,6 +9,8 @@ interface ItemFilters {
   category?: string;
   subcategory?: string;
   tier?: number;
+  minTier?: number;
+  maxTier?: number;
   enchant?: number;
   search?: string;
   locale?: string;
@@ -35,6 +37,8 @@ export function useAlbionItems(filters?: ItemFilters) {
   if (filters?.category) params.set('category', filters.category);
   if (filters?.subcategory) params.set('subcategory', filters.subcategory);
   if (filters?.tier !== undefined) params.set('tier', filters.tier.toString());
+  if (filters?.minTier !== undefined) params.set('minTier', filters.minTier.toString());
+  if (filters?.maxTier !== undefined) params.set('maxTier', filters.maxTier.toString());
   if (filters?.enchant !== undefined) params.set('enchant', filters.enchant.toString());
   if (filters?.search) params.set('search', filters.search);
   if (filters?.locale) params.set('locale', filters.locale);

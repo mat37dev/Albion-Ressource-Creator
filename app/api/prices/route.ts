@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchPrices } from "@/lib/albion/api";
 
-export const revalidate = 1800; // 30 minutes
+export const revalidate = 0; // Toujours frais — l'utilisateur upload lui-même les prix via le client AODP
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(prices, {
       headers: {
-        "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=3600",
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

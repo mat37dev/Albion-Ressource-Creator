@@ -53,6 +53,11 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(albionItems.tier, parseInt(tier)));
     }
 
+    const minTier = searchParams.get('minTier');
+    const maxTier = searchParams.get('maxTier');
+    if (minTier) conditions.push(sql`${albionItems.tier} >= ${parseInt(minTier)}`);
+    if (maxTier) conditions.push(sql`${albionItems.tier} <= ${parseInt(maxTier)}`);
+
     if (enchant !== null && enchant !== undefined) {
       conditions.push(eq(albionItems.enchant, parseInt(enchant)));
     }
