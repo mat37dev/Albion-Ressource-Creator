@@ -34,7 +34,7 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
   };
 
   const formatPercent = (value: number) => {
-    return `${value.toFixed(1)}%`;
+    return `${value.toFixed(2)}%`;
   };
 
   const getProfitColor = (profit: number) => {
@@ -147,7 +147,9 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                     <TableHead>Item</TableHead>
                     <TableHead className="text-right">Qté</TableHead>
                     <TableHead className="text-right">Coût mat.</TableHead>
-                    <TableHead className="text-right">Prix vente</TableHead>
+                    <TableHead className="text-right">Prix net/unité</TableHead>
+                    <TableHead>Ville vente</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead className="text-right">Profit/unité</TableHead>
                     <TableHead className="text-right">Profit total</TableHead>
                     <TableHead className="text-right">Marge %</TableHead>
@@ -159,7 +161,18 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                       <TableCell className="font-medium">{item.itemName}</TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
                       <TableCell className="text-right">{formatSilver(item.materialCost)}</TableCell>
-                      <TableCell className="text-right">{formatSilver(item.netSellPrice)}</TableCell>
+                      <TableCell className="text-right">{formatSilver(item.netSellPrice / item.quantity)}</TableCell>
+                      <TableCell>{item.sellCity}</TableCell>
+                      <TableCell>
+                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                          item.sellType === 'direct' ? 'bg-blue-500/20 text-blue-400' :
+                          item.sellType === 'blackmarket' ? 'bg-purple-500/20 text-purple-400' :
+                          'bg-green-500/20 text-green-400'
+                        }`}>
+                          {item.sellType === 'direct' ? 'Direct' :
+                           item.sellType === 'blackmarket' ? 'BM' : 'Ordre'}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-right">{formatSilver(item.unitProfit)}</TableCell>
                       <TableCell className={`text-right font-bold ${getProfitColor(item.totalProfit)}`}>
                         {formatSilver(item.totalProfit)}

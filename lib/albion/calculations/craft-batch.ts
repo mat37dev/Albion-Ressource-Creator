@@ -7,6 +7,20 @@ import {
 } from "@/lib/constants/bonuses";
 import { getItemNames } from "@/lib/utils/item-names";
 
+// Matériaux exempts du RRR : consommés en totalité quel que soit le taux
+// (Énergie Avalonienne, runes, âmes, reliques, sceaux)
+function isRRRExempt(materialId: string): boolean {
+  const id = materialId.toUpperCase();
+  return (
+    id.includes("TOKEN_AVALON") ||
+    id.includes("ESSENCE_AVALON") ||
+    id.includes("RUNE") ||
+    id.includes("SOUL") ||
+    id.includes("RELIC") ||
+    id.includes("SHARD_AVALON")
+  );
+}
+
 export async function calculateBatchProfit(
   batchState: CraftBatchState,
   locale: "en" | "fr" = "en"
@@ -40,7 +54,8 @@ export async function calculateBatchProfit(
       for (const material of recipe.materials) {
         const matReq = batchState.materials[material.materialItemId];
         if (matReq) {
-          const effectiveQty = material.quantity * item.quantity * (1 - itemRRR);
+          const rrr = isRRRExempt(material.materialItemId) ? 0 : itemRRR;
+          const effectiveQty = material.quantity * item.quantity * (1 - rrr);
           itemMaterialCost += effectiveQty * matReq.pricePerUnit;
         }
       }
