@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { TrendingUp, ArrowLeftRight, Hammer, Repeat, Store, Package } from "lucide-react";
+import { TrendingUp, ArrowLeftRight, Hammer, Repeat, Store } from "lucide-react";
 
 interface HeaderProps {
   locale: string;
@@ -19,7 +19,6 @@ export function Header({ locale }: HeaderProps) {
     { href: `/${locale}`, label: t("home"), icon: TrendingUp },
     { href: `/${locale}/transport`, label: t("transport"), icon: ArrowLeftRight },
     { href: `/${locale}/craft`, label: t("craft"), icon: Hammer },
-    { href: `/${locale}/craft-batch`, label: t("craftBatch"), icon: Package },
     { href: `/${locale}/flipper`, label: t("flipper"), icon: Repeat },
     { href: `/${locale}/black-market`, label: t("blackMarket"), icon: Store },
   ];

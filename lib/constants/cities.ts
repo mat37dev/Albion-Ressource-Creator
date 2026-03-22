@@ -10,6 +10,10 @@ export const CITIES = [
 
 export type City = (typeof CITIES)[number];
 
+// Emplacements de vente uniquement (inclut le Black Market de Caerleon)
+export const SELL_LOCATIONS = [...CITIES, "Black Market"] as const;
+export type SellCity = (typeof SELL_LOCATIONS)[number];
+
 export const CITY_SLUGS: Record<City, string> = {
   Thetford: "thetford",
   Bridgewatch: "bridgewatch",

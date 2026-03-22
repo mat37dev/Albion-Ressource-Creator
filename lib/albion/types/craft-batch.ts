@@ -1,11 +1,11 @@
-import { City } from "@/lib/constants/cities";
+import { City, SellCity } from "@/lib/constants/cities";
 
 export interface CraftBatchItem {
   id: string; // UUID unique pour ce batch item
   itemId: string; // T4_MAIN_SWORD
   recipeId: string; // UUID de la recette choisie
   quantity: number;
-  sellCity: City;
+  sellCity: SellCity;
   sellType: 'direct' | 'order' | 'blackmarket';
   customSellPrice?: number;
   rrr?: number; // RRR spécifique à cet item (défaut 18%)
@@ -63,7 +63,7 @@ export interface CraftItemResult {
   materialCost: number;
   sellPrice: number;
   netSellPrice: number; // Après taxes
-  sellCity: City;
+  sellCity: SellCity;
   sellType: string;
 }
 

@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ItemIcon } from "@/components/ui/item-icon";
 import { Trash2, Settings, Package, RefreshCw } from "lucide-react";
-import { CITIES, type City } from "@/lib/constants/cities";
+import { CITIES, SELL_LOCATIONS, type City, type SellCity } from "@/lib/constants/cities";
 import { getItemNames } from "@/lib/utils/item-names";
 
 interface ItemSelectionTabProps {
@@ -131,14 +131,22 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
   };
 
   // Update price when city or type changes
-  const handleCityChange = async (batchItemId: string, itemId: string, newCity: City) => {
-    craftBatch.updateItemConfig(batchItemId, { sellCity: newCity });
+  const handleCityChange = async (batchItemId: string, itemId: string, newCity: SellCity) => {
+    const updates: Partial<Parameters<typeof craftBatch.updateItemConfig>[1]> = { sellCity: newCity };
+    // Black Market → force sellType blackmarket
+    if (newCity === "Black Market") {
+      updates.sellType = "blackmarket";
+    }
+    craftBatch.updateItemConfig(batchItemId, updates);
 
     // Fetch prices and update based on current sell type
     try {
+      const fetchLocations = newCity === "Black Market"
+        ? "Black Market"
+        : CITIES.join(",");
       const params = new URLSearchParams({
         items: itemId,
-        locations: CITIES.join(","),
+        locations: fetchLocations,
         qualities: "1",
       });
       const res = await fetch(`/api/prices?${params}`);
@@ -151,12 +159,13 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
       const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
       if (!batchItem) return;
 
+      const effectiveSellType = newCity === "Black Market" ? "blackmarket" : batchItem.sellType;
       let newPrice = 0;
-      if (batchItem.sellType === 'direct' && cityPrice.buy_price_max > 0) {
+      if (effectiveSellType === 'direct' && cityPrice.buy_price_max > 0) {
         newPrice = cityPrice.buy_price_max;
-      } else if (batchItem.sellType === 'order' && cityPrice.sell_price_min > 0) {
+      } else if (effectiveSellType === 'order' && cityPrice.sell_price_min > 0) {
         newPrice = cityPrice.sell_price_min;
-      } else if (batchItem.sellType === 'blackmarket' && cityPrice.buy_price_max > 0) {
+      } else if (effectiveSellType === 'blackmarket' && cityPrice.buy_price_max > 0) {
         newPrice = cityPrice.buy_price_max;
       }
 
@@ -348,13 +357,13 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
                     <TableCell>
                       <Select
                         value={item.sellCity}
-                        onValueChange={(city) => handleCityChange(item.id, item.itemId, city as City)}
+                        onValueChange={(city) => handleCityChange(item.id, item.itemId, city as SellCity)}
                       >
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-36">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {CITIES.map((city) => (
+                          {SELL_LOCATIONS.map((city) => (
                             <SelectItem key={city} value={city}>{city}</SelectItem>
                           ))}
                         </SelectContent>
