@@ -5,7 +5,39 @@
     "craft": "Craft",
     "flipper": "Flipper",
     "blackMarket": "Black Market",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "profile": "Profil"
+  },
+  "auth": {
+    "loginTitle": "Connexion",
+    "loginSubtitle": "Connectez-vous à votre compte AlbionCreator",
+    "registerTitle": "Créer un compte",
+    "registerSubtitle": "Rejoignez AlbionCreator pour sauvegarder vos configurations",
+    "profileTitle": "Mon Profil",
+    "email": "Email",
+    "password": "Mot de passe",
+    "passwordHint": "Minimum 8 caractères",
+    "ingameName": "Pseudo en jeu",
+    "role": "Rôle",
+    "login": "Se connecter",
+    "loggingIn": "Connexion...",
+    "logout": "Se déconnecter",
+    "register": "S'inscrire",
+    "registering": "Inscription...",
+    "profile": "Mon Profil",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "saveSuccess": "Profil mis à jour",
+    "saveError": "Erreur lors de la mise à jour",
+    "administration": "Administration",
+    "noAccount": "Pas encore de compte ?",
+    "hasAccount": "Déjà un compte ?",
+    "errors": {
+      "invalidCredentials": "Email ou mot de passe incorrect",
+      "emailTaken": "Cet email est déjà utilisé",
+      "passwordTooShort": "Le mot de passe doit faire au moins 8 caractères",
+      "registrationFailed": "Erreur lors de l'inscription, réessayez"
+    }
   },
   "home": {
     "title": "AlbionCreator",
@@ -150,6 +182,35 @@
     "dataSource": "Données fournies par l'API Albion Online Data Project."
   },
   "admin": {
+    "panelTitle": "Administration",
+    "nav": {
+      "users": "Utilisateurs",
+      "items": "Items"
+    },
+    "users": {
+      "title": "Gestion des utilisateurs",
+      "description": "Consultez et modifiez les rôles des membres.",
+      "searchPlaceholder": "Rechercher par email ou pseudo...",
+      "usersCount": "utilisateur(s)",
+      "colEmail": "Email",
+      "colPseudo": "Pseudo",
+      "colRole": "Rôle",
+      "colCreated": "Inscrit le",
+      "loading": "Chargement...",
+      "noResults": "Aucun utilisateur trouvé.",
+      "you": "vous",
+      "noPseudo": "aucun",
+      "colActions": "Actions",
+      "editTitle": "Modifier l'utilisateur",
+      "deleteTitle": "Supprimer l'utilisateur",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+      "deleteWarning": "Cette action est irréversible. Les données associées seront également supprimées.",
+      "cancel": "Annuler",
+      "confirmDelete": "Supprimer",
+      "saving": "Enregistrement...",
+      "deleting": "Suppression...",
+      "errorEmailTaken": "Cet email est déjà utilisé"
+    },
     "items": {
       "title": "Explorateur d'items (Admin)",
       "description": "Parcourez tous les items disponibles sur le site",

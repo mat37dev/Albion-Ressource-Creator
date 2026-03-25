@@ -6,6 +6,7 @@ export const users = pgTable("users", {
   name: text("name"),
   role: text("role").notNull().default("free"), // free, premium, admin
   patreonId: text("patreon_id"),
+  passwordHash: text("password_hash"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

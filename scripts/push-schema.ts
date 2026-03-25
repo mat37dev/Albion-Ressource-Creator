@@ -25,6 +25,11 @@ async function pushSchema() {
     `);
     console.log("   ✅ Table 'users' créée\n");
 
+    // Migration: add password_hash column if missing
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT
+    `);
+
     // Table: favorites
     console.log("📦 Création de la table 'favorites'...");
     await db.execute(sql`

@@ -5,6 +5,7 @@ import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { Header } from "@/components/Header";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 import "../globals.css";
 import React from "react";
 
@@ -40,6 +41,7 @@ export default async function LocaleLayout({
     <html lang={locale}>
       <body className={inter.className}>
         <NextIntlClientProvider messages={messages}>
+          <SessionProvider>
           <div className="min-h-screen bg-background flex flex-col">
             <Header locale={locale} />
             <main className="flex-1 container mx-auto px-4 py-6">
@@ -52,6 +54,7 @@ export default async function LocaleLayout({
               </div>
             </footer>
           </div>
+          </SessionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

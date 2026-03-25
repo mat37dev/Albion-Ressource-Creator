@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { UserMenu } from "./UserMenu";
 import { TrendingUp, ArrowLeftRight, Hammer, Repeat, Store } from "lucide-react";
 
 interface HeaderProps {
@@ -59,8 +60,11 @@ export function Header({ locale }: HeaderProps) {
             })}
           </nav>
 
-          {/* Language Switcher */}
-          <LanguageSwitcher currentLocale={locale} />
+          {/* User Menu + Language Switcher */}
+          <div className="flex items-center gap-2">
+            <UserMenu locale={locale} />
+            <LanguageSwitcher currentLocale={locale} />
+          </div>
         </div>
 
         {/* Mobile Navigation */}
