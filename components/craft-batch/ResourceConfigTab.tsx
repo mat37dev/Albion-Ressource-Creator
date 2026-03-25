@@ -12,6 +12,8 @@ import { RefreshCw } from "lucide-react";
 import { CITIES, City } from "@/lib/constants/cities";
 import { formatSilver } from "@/lib/utils";
 import { getItemNames } from "@/lib/utils/item-names";
+import { isRRRExempt } from "@/lib/albion/utils/rrr";
+import type { CraftBatchItem } from "@/lib/albion/types/craft-batch";
 
 interface ResourceConfigTabProps {
   craftBatch: ReturnType<typeof import("@/lib/hooks/useCraftBatch").useCraftBatch>;
@@ -23,8 +25,9 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
   const [materialNames, setMaterialNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Agréger les matériaux quand on arrive sur cet onglet
-    if (craftBatch.batchState.items.length > 0 && Object.keys(craftBatch.batchState.materials).length === 0) {
+    // Agréger les matériaux si certains items n'ont pas de recipeMaterials (cas fallback)
+    const missingRecipes = craftBatch.batchState.items.some(i => !i.recipeMaterials);
+    if (craftBatch.batchState.items.length > 0 && missingRecipes) {
       craftBatch.aggregateMaterials();
     }
   }, [craftBatch.batchState.items.length]);
@@ -48,6 +51,19 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
     (sum, mat) => sum + mat.totalQuantity * mat.pricePerUnit,
     0
   );
+
+  // Calcule la quantité RRR pour un matériau donné à partir des items du batch
+  const computeRRRQty = (materialId: string): number => {
+    let total = 0;
+    for (const item of craftBatch.batchState.items) {
+      if (!item.recipeMaterials) continue;
+      const mat = item.recipeMaterials.find(m => m.materialItemId === materialId);
+      if (!mat) continue;
+      const rrr = isRRRExempt(materialId) ? 0 : (item.rrr ?? 18) / 100;
+      total += Math.ceil(mat.quantity * item.quantity * (1 - rrr));
+    }
+    return total;
+  };
 
   // Handle city change with dynamic price update
   const handleCityChange = async (materialId: string, newCity: City) => {
@@ -125,6 +141,7 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
                   <TableRow>
                     <TableHead>Matériau</TableHead>
                     <TableHead className="text-right">Qté nécessaire</TableHead>
+                    <TableHead className="text-right">Qté avec RRR</TableHead>
                     <TableHead>Ville d&apos;achat</TableHead>
                     <TableHead>Type d&apos;achat</TableHead>
                     <TableHead className="text-right">Prix unitaire</TableHead>
@@ -132,7 +149,9 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {materials.map((material) => (
+                  {materials.map((material) => {
+                    const rrrQty = computeRRRQty(material.materialId);
+                    return (
                     <TableRow key={material.materialId}>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -143,6 +162,9 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-semibold">{material.totalQuantity}</TableCell>
+                      <TableCell className="text-right font-semibold text-albion-gold">
+                        {rrrQty > 0 ? rrrQty : material.totalQuantity}
+                      </TableCell>
                       <TableCell>
                         <Select
                           value={material.buyCity}
@@ -188,7 +210,8 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
                         {formatSilver(material.totalQuantity * material.pricePerUnit)}
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
 

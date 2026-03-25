@@ -31,11 +31,11 @@ export function CraftBatchClient() {
               )}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="resources" disabled={craftBatch.batchState.items.length === 0}>
-            2. Ressources
-          </TabsTrigger>
           <TabsTrigger value="settings" disabled={craftBatch.batchState.items.length === 0}>
-            3. Paramétrage
+            2. Paramétrage
+          </TabsTrigger>
+          <TabsTrigger value="resources" disabled={craftBatch.batchState.items.length === 0}>
+            3. Ressources
           </TabsTrigger>
           <TabsTrigger value="results" disabled={craftBatch.batchState.items.length === 0}>
             4. Résultats
@@ -46,12 +46,12 @@ export function CraftBatchClient() {
           <ItemSelectionTab craftBatch={craftBatch} />
         </TabsContent>
 
-        <TabsContent value="resources">
-          <ResourceConfigTab craftBatch={craftBatch} />
-        </TabsContent>
-
         <TabsContent value="settings">
           <SettingsTab craftBatch={craftBatch} />
+        </TabsContent>
+
+        <TabsContent value="resources">
+          <ResourceConfigTab craftBatch={craftBatch} />
         </TabsContent>
 
         <TabsContent value="results">

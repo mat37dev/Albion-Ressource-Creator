@@ -9,6 +9,8 @@ export interface CraftBatchItem {
   sellType: 'direct' | 'order' | 'blackmarket';
   customSellPrice?: number;
   rrr?: number; // RRR spécifique à cet item (défaut 18%)
+  recipeMaterials?: Array<{ materialItemId: string; quantity: number }>; // Cache recette
+  craftingFeeBase?: number; // Nutrition requise pour le craft (depuis la recette)
 }
 
 export interface MaterialRequirement {
@@ -29,7 +31,7 @@ export interface CraftBatchState {
   globalSettings: {
     useFocus: boolean;
     isPremium: boolean; // Compte Premium (taxes réduites)
-    craftingFeePercent: number; // Frais de station (% du prix de vente, 0-10%)
+    craftingFeePerNutrition: number; // Prix par nutrition à la station (en silver)
   };
   journals?: {
     use: boolean;
@@ -70,10 +72,11 @@ export interface CraftItemResult {
 export interface MaterialSummary {
   materialId: string;
   materialName: string;
-  totalQuantity: number;
-  effectiveQuantity: number;
+  totalQuantity: number; // Quantité brute (sans RRR)
+  effectiveQuantity: number; // Quantité avec RRR (ce qu'on doit acheter)
+  rrrQuantity: number; // Alias explicite = effectiveQuantity arrondi au supérieur
   pricePerUnit: number;
-  totalCost: number;
+  totalCost: number; // Coût basé sur rrrQuantity
   buyCity: City;
   buyType: string;
 }

@@ -6,27 +6,14 @@ import {
   NON_PREMIUM_TAX_ORDER
 } from "@/lib/constants/bonuses";
 import { getItemNames } from "@/lib/utils/item-names";
-
-// Matériaux exempts du RRR : consommés en totalité quel que soit le taux
-// (Énergie Avalonienne, runes, âmes, reliques, sceaux)
-function isRRRExempt(materialId: string): boolean {
-  const id = materialId.toUpperCase();
-  return (
-    id.includes("TOKEN_AVALON") ||
-    id.includes("ESSENCE_AVALON") ||
-    id.includes("RUNE") ||
-    id.includes("SOUL") ||
-    id.includes("RELIC") ||
-    id.includes("SHARD_AVALON")
-  );
-}
+import { isRRRExempt } from "@/lib/albion/utils/rrr";
 
 export async function calculateBatchProfit(
   batchState: CraftBatchState,
   locale: "en" | "fr" = "en"
 ): Promise<CraftBatchResult> {
   const itemResults: CraftItemResult[] = [];
-  const { isPremium, craftingFeePercent = 0 } = batchState.globalSettings;
+  const { isPremium, craftingFeePerNutrition = 0 } = batchState.globalSettings;
 
   // Fetch all item names in one batch request
   const allItemIds = [
@@ -35,34 +22,51 @@ export async function calculateBatchProfit(
   ];
   const itemNames = await getItemNames(allItemIds, locale);
 
+  // Accumulateur RRR par matériau (pour le résumé)
+  const rrrQuantityMap: Record<string, number> = {};
+
   // Calculer le profit pour chaque item
   for (const item of batchState.items) {
-    // Récupérer la recette
-    const recipeRes = await fetch(`/api/recipes/${item.itemId}`);
-    if (!recipeRes.ok) {
-      console.error(`Failed to fetch recipe for ${item.itemId}`);
-      continue;
+    // Utiliser les recipeMaterials cachés ou refetch
+    let recipeMaterials = item.recipeMaterials;
+    let craftingFeeBase = item.craftingFeeBase ?? 0;
+
+    if (!recipeMaterials) {
+      const recipeRes = await fetch(`/api/recipes/${item.itemId}`);
+      if (!recipeRes.ok) {
+        console.error(`Failed to fetch recipe for ${item.itemId}`);
+        continue;
+      }
+      const recipe = await recipeRes.json();
+      recipeMaterials = recipe.materials?.map((m: any) => ({
+        materialItemId: m.materialItemId,
+        quantity: m.quantity,
+      }));
+      craftingFeeBase = recipe.craftingFeeBase ?? 0;
     }
-    const recipe = await recipeRes.json();
 
     // RRR spécifique à cet item (ou défaut 18%)
     const itemRRR = (item.rrr !== undefined ? item.rrr : 18) / 100;
 
     // Calculer coût matériaux pour cet item AVEC son RRR spécifique
     let itemMaterialCost = 0;
-    if (recipe.materials) {
-      for (const material of recipe.materials) {
+    if (recipeMaterials) {
+      for (const material of recipeMaterials) {
         const matReq = batchState.materials[material.materialItemId];
         if (matReq) {
           const rrr = isRRRExempt(material.materialItemId) ? 0 : itemRRR;
-          const effectiveQty = material.quantity * item.quantity * (1 - rrr);
+          const effectiveQty = Math.ceil(material.quantity * item.quantity * (1 - rrr));
           itemMaterialCost += effectiveQty * matReq.pricePerUnit;
+
+          // Accumuler la quantité RRR globale par matériau
+          rrrQuantityMap[material.materialItemId] =
+            (rrrQuantityMap[material.materialItemId] ?? 0) + effectiveQty;
         }
       }
     }
 
-    // Prix de vente avec taxes Premium
-    let sellPrice = item.customSellPrice || 0;
+    // Prix de vente avec taxes
+    const sellPrice = item.customSellPrice || 0;
     let taxRate = 0;
 
     if (item.sellType === 'direct') {
@@ -70,14 +74,13 @@ export async function calculateBatchProfit(
     } else if (item.sellType === 'order') {
       taxRate = isPremium ? PREMIUM_TAX_ORDER : NON_PREMIUM_TAX_ORDER;
     } else if (item.sellType === 'blackmarket') {
-      // Black Market: same as direct
       taxRate = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
     }
 
     const netSellPrice = sellPrice * (1 - taxRate);
 
-    // Frais de station (% du prix de vente brut, payé au moment du craft)
-    const craftingFeePerUnit = sellPrice * (craftingFeePercent / 100);
+    // Frais de station (nutrition × prix par nutrition)
+    const craftingFeePerUnit = craftingFeeBase * craftingFeePerNutrition;
     const totalCraftingFee = craftingFeePerUnit * item.quantity;
 
     // Profit
@@ -111,23 +114,26 @@ export async function calculateBatchProfit(
     }, 0);
   }
 
-  // Agréger les totaux
   const totalProfit = itemResults.reduce((sum, r) => sum + r.totalProfit, 0) + journalProfit;
   const totalCost = itemResults.reduce((sum, r) => sum + r.materialCost, 0);
   const totalRevenue = itemResults.reduce((sum, r) => sum + r.netSellPrice, 0) + journalProfit;
 
-  // Résumé des matériaux (affichage brut sans RRR appliqué)
+  // Résumé des matériaux avec quantités brutes ET RRR
   const aggregatedMaterials: MaterialSummary[] = Object.entries(batchState.materials).map(
-    ([matId, matReq]) => ({
-      materialId: matId,
-      materialName: itemNames[matId] || matId,
-      totalQuantity: matReq.totalQuantity,
-      effectiveQuantity: matReq.totalQuantity, // Affichage brut, RRR appliqué par item
-      pricePerUnit: matReq.pricePerUnit,
-      totalCost: matReq.totalQuantity * matReq.pricePerUnit,
-      buyCity: matReq.buyCity,
-      buyType: matReq.buyType,
-    })
+    ([matId, matReq]) => {
+      const rrrQty = rrrQuantityMap[matId] ?? matReq.totalQuantity;
+      return {
+        materialId: matId,
+        materialName: itemNames[matId] || matId,
+        totalQuantity: matReq.totalQuantity,
+        effectiveQuantity: rrrQty,
+        rrrQuantity: rrrQty,
+        pricePerUnit: matReq.pricePerUnit,
+        totalCost: rrrQty * matReq.pricePerUnit, // Coût basé sur quantité RRR
+        buyCity: matReq.buyCity,
+        buyType: matReq.buyType,
+      };
+    }
   );
 
   return {
@@ -136,7 +142,7 @@ export async function calculateBatchProfit(
     totalCost,
     totalRevenue,
     aggregatedMaterials,
-    rrr: 0.18, // RRR moyen indicatif
+    rrr: 0.18,
     journalProfit: journalProfit > 0 ? journalProfit : undefined,
   };
 }

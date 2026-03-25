@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useLocale } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { ItemIcon } from "@/components/ui/item-icon";
@@ -18,6 +19,8 @@ export function SettingsTab({ craftBatch }: SettingsTabProps) {
   const locale = useLocale();
   const [itemRRR, setItemRRR] = useState<Record<string, number>>({});
   const [globalRRR, setGlobalRRR] = useState(18);
+  const [globalRRRInput, setGlobalRRRInput] = useState("18");
+  const [itemRRRInputs, setItemRRRInputs] = useState<Record<string, string>>({});
   const [itemNames, setItemNames] = useState<Record<string, string>>({});
 
   // Load item names
@@ -31,26 +34,59 @@ export function SettingsTab({ craftBatch }: SettingsTabProps) {
   // Initialize item RRR from batch state
   useEffect(() => {
     const newItemRRR: Record<string, number> = {};
+    const newItemRRRInputs: Record<string, string> = {};
     craftBatch.batchState.items.forEach(item => {
-      newItemRRR[item.id] = item.rrr !== undefined ? item.rrr : 18;
+      const val = item.rrr !== undefined ? item.rrr : 18;
+      newItemRRR[item.id] = val;
+      newItemRRRInputs[item.id] = String(val);
     });
     setItemRRR(newItemRRR);
+    setItemRRRInputs(newItemRRRInputs);
   }, [craftBatch.batchState.items]);
 
   // Apply global RRR to all items
   const applyGlobalRRR = () => {
     const newItemRRR: Record<string, number> = {};
+    const newItemRRRInputs: Record<string, string> = {};
     craftBatch.batchState.items.forEach(item => {
       craftBatch.updateItemConfig(item.id, { rrr: globalRRR });
       newItemRRR[item.id] = globalRRR;
+      newItemRRRInputs[item.id] = String(globalRRR);
     });
     setItemRRR(newItemRRR);
+    setItemRRRInputs(newItemRRRInputs);
   };
 
   // Update individual item RRR
   const updateItemRRR = (itemId: string, rrr: number) => {
-    setItemRRR(prev => ({ ...prev, [itemId]: rrr }));
-    craftBatch.updateItemConfig(itemId, { rrr });
+    const clamped = Math.min(95, Math.max(0, rrr));
+    setItemRRR(prev => ({ ...prev, [itemId]: clamped }));
+    setItemRRRInputs(prev => ({ ...prev, [itemId]: String(clamped) }));
+    craftBatch.updateItemConfig(itemId, { rrr: clamped });
+  };
+
+  const handleGlobalRRRInput = (raw: string) => {
+    setGlobalRRRInput(raw);
+    const parsed = parseFloat(raw);
+    if (!isNaN(parsed)) {
+      const clamped = Math.min(95, Math.max(0, parsed));
+      setGlobalRRR(clamped);
+    }
+  };
+
+  const handleGlobalRRRSlider = (value: number) => {
+    setGlobalRRR(value);
+    setGlobalRRRInput(String(value));
+  };
+
+  const handleItemRRRInput = (itemId: string, raw: string) => {
+    setItemRRRInputs(prev => ({ ...prev, [itemId]: raw }));
+    const parsed = parseFloat(raw);
+    if (!isNaN(parsed)) {
+      const clamped = Math.min(95, Math.max(0, parsed));
+      setItemRRR(prev => ({ ...prev, [itemId]: clamped }));
+      craftBatch.updateItemConfig(itemId, { rrr: clamped });
+    }
   };
 
   return (
@@ -67,7 +103,7 @@ export function SettingsTab({ craftBatch }: SettingsTabProps) {
           {/* RRR Global */}
           <div className="p-4 border rounded-lg bg-albion-blue/5">
             <Label className="text-base font-semibold mb-2 block">
-              RRR pour tous les items: {globalRRR}%
+              RRR pour tous les items
             </Label>
             <p className="text-xs text-muted-foreground mb-3">
               Le taux de retour de ressources (RRR) réduit la quantité de matériaux consommés lors du craft.
@@ -76,12 +112,22 @@ export function SettingsTab({ craftBatch }: SettingsTabProps) {
             <div className="flex gap-3 items-center">
               <Slider
                 value={[globalRRR]}
-                onValueChange={([value]) => setGlobalRRR(value)}
+                onValueChange={([value]) => handleGlobalRRRSlider(value)}
                 min={0}
                 max={95}
-                step={1}
+                step={0.1}
                 className="flex-1"
               />
+              <Input
+                type="number"
+                min={0}
+                max={95}
+                step={0.1}
+                value={globalRRRInput}
+                onChange={(e) => handleGlobalRRRInput(e.target.value)}
+                className="w-20 text-right"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
               <Button onClick={applyGlobalRRR} size="sm" className="bg-albion-gold text-albion-dark hover:bg-albion-gold/90">
                 Appliquer à tous
               </Button>
@@ -101,18 +147,29 @@ export function SettingsTab({ craftBatch }: SettingsTabProps) {
                     <span className="flex-1 font-medium">
                       {itemNames[item.itemId] || item.itemId}
                     </span>
-                    <div className="flex items-center gap-2 min-w-[200px]">
-                      <Label className="text-sm font-mono w-12 text-right">
-                        {itemRRR[item.id] || 18}%
-                      </Label>
+                    <div className="flex items-center gap-2 min-w-[260px]">
                       <Slider
-                        value={[itemRRR[item.id] || 18]}
-                        onValueChange={([value]) => updateItemRRR(item.id, value)}
+                        value={[itemRRR[item.id] ?? 18]}
+                        onValueChange={([value]) => {
+                          setItemRRR(prev => ({ ...prev, [item.id]: value }));
+                          setItemRRRInputs(prev => ({ ...prev, [item.id]: String(value) }));
+                          craftBatch.updateItemConfig(item.id, { rrr: value });
+                        }}
                         min={0}
                         max={95}
-                        step={1}
+                        step={0.1}
                         className="flex-1"
                       />
+                      <Input
+                        type="number"
+                        min={0}
+                        max={95}
+                        step={0.1}
+                        value={itemRRRInputs[item.id] ?? "18"}
+                        onChange={(e) => handleItemRRRInput(item.id, e.target.value)}
+                        className="w-16 text-right px-2"
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
                     </div>
                   </div>
                 ))}
@@ -138,26 +195,31 @@ export function SettingsTab({ craftBatch }: SettingsTabProps) {
         </CardHeader>
         <CardContent>
           <div className="p-4 border rounded-lg bg-albion-blue/5">
-            <Label className="text-base font-semibold mb-2 block">
-              Frais de station : {craftBatch.batchState.globalSettings.craftingFeePercent ?? 0}%
+            <Label htmlFor="craftingFeePerNutrition" className="text-base font-semibold mb-2 block">
+              Prix par nutrition (silver)
             </Label>
             <p className="text-xs text-muted-foreground mb-3">
-              Pourcentage du prix de vente payé au propriétaire de la station (0% = station personnelle, ~1-3% = station publique).
+              Entrez le coût en silver par point de nutrition de la station.
+              Laissez à 0 si vous utilisez votre propre station (gratuit).
+              Le coût total = nutrition de la recette × prix par nutrition × quantité craftée.
             </p>
-            <Slider
-              value={[craftBatch.batchState.globalSettings.craftingFeePercent ?? 0]}
-              onValueChange={([value]) =>
-                craftBatch.updateGlobalSettings({ craftingFeePercent: value })
-              }
+            <Input
+              id="craftingFeePerNutrition"
+              type="number"
               min={0}
-              max={10}
-              step={0.5}
-              className="flex-1"
+              step={0.001}
+              value={craftBatch.batchState.globalSettings.craftingFeePerNutrition ?? 0}
+              onChange={(e) =>
+                craftBatch.updateGlobalSettings({
+                  craftingFeePerNutrition: parseFloat(e.target.value) || 0,
+                })
+              }
+              className="w-48"
+              placeholder="0"
             />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>0% (propre station)</span>
-              <span>10%</span>
-            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Exemple : 0.03 silver/nutrition × 300 nutrition = 9 silver de frais par craft
+            </p>
           </div>
         </CardContent>
       </Card>

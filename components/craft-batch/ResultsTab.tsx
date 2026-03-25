@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ItemIcon } from "@/components/ui/item-icon";
 import { Calculator, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 import { formatSilver } from "@/lib/utils";
 import { calculateBatchProfit } from "@/lib/albion/calculations/craft-batch";
@@ -20,7 +21,7 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
   const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleCalculate = async () => {
+  const handleCalculate = useCallback(async () => {
     setCalculating(true);
     setError(null);
     try {
@@ -31,11 +32,14 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
     } finally {
       setCalculating(false);
     }
-  };
+  }, [craftBatch.batchState, locale]);
 
-  const formatPercent = (value: number) => {
-    return `${value.toFixed(2)}%`;
-  };
+  // Auto-calcul à l'ouverture de l'onglet
+  useEffect(() => {
+    handleCalculate();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const formatPercent = (value: number) => `${value.toFixed(2)}%`;
 
   const getProfitColor = (profit: number) => {
     if (profit > 0) return "text-green-500";
@@ -54,7 +58,7 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
             className="bg-albion-gold text-albion-dark hover:bg-albion-gold/90"
           >
             <Calculator className={`w-4 h-4 mr-2 ${calculating ? 'animate-pulse' : ''}`} />
-            Calculer
+            Recalculer
           </Button>
         </div>
       </CardHeader>
@@ -72,9 +76,8 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
 
         {!result ? (
           <div className="text-center py-12 text-muted-foreground">
-            <Calculator className="w-12 h-12 mx-auto mb-3 opacity-20" />
-            <p className="font-medium">Prêt à calculer</p>
-            <p className="text-sm mt-1">Cliquez sur &quot;Calculer&quot; pour voir les résultats</p>
+            <Calculator className={`w-12 h-12 mx-auto mb-3 opacity-20 ${calculating ? 'animate-pulse' : ''}`} />
+            <p className="font-medium">{calculating ? "Calcul en cours…" : "En attente des données"}</p>
           </div>
         ) : (
           <>
@@ -108,7 +111,7 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                 <CardContent className="pt-6">
                   <p className="text-sm text-muted-foreground">Statut</p>
                   <p className="text-xl font-bold text-albion-gold">
-                    {craftBatch.batchState.globalSettings.isPremium ? "Premium ✓" : "Free"}
+                    {craftBatch.batchState.globalSettings.isPremium ? "Premium ✓" : "Standard"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {craftBatch.batchState.globalSettings.isPremium
@@ -158,7 +161,12 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                 <TableBody>
                   {result.itemResults.map((item) => (
                     <TableRow key={item.batchItemId}>
-                      <TableCell className="font-medium">{item.itemName}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <ItemIcon item={item.itemId} size={32} />
+                          <span className="font-medium">{item.itemName}</span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
                       <TableCell className="text-right">{formatSilver(item.materialCost)}</TableCell>
                       <TableCell className="text-right">{formatSilver(item.netSellPrice / item.quantity)}</TableCell>
@@ -192,24 +200,30 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                   <TableRow>
                     <TableHead>Matériau</TableHead>
                     <TableHead className="text-right">Qté totale</TableHead>
+                    <TableHead className="text-right">Qté total RRR</TableHead>
                     <TableHead className="text-right">Prix unitaire</TableHead>
-                    <TableHead className="text-right">Coût total</TableHead>
+                    <TableHead className="text-right">Coût Total RRR</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {result.aggregatedMaterials.map((mat) => (
                     <TableRow key={mat.materialId}>
-                      <TableCell className="font-medium">{mat.materialName}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <ItemIcon item={mat.materialId} size={32} />
+                          <span className="font-medium">{mat.materialName}</span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">{mat.totalQuantity}</TableCell>
+                      <TableCell className="text-right font-semibold text-albion-gold">
+                        {mat.rrrQuantity}
+                      </TableCell>
                       <TableCell className="text-right">{formatSilver(mat.pricePerUnit)}</TableCell>
                       <TableCell className="text-right font-bold">{formatSilver(mat.totalCost)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              <p className="text-xs text-muted-foreground mt-2">
-                Note: Les coûts affichés incluent le RRR configuré individuellement pour chaque item.
-              </p>
             </div>
           </>
         )}
