@@ -1,7 +1,6 @@
 {
   "nav": {
     "home": "Home",
-    "transport": "Transport",
     "craft": "Craft",
     "flipper": "Flipper",
     "blackMarket": "Black Market",
@@ -44,17 +43,13 @@
     "subtitle": "Economic opportunities for Albion Online",
     "description": "Identify the best profit opportunities: inter-city transport, profitable crafting, market flipping and Black Market arbitrage.",
     "cards": {
-      "transport": {
-        "title": "Transport Arbitrage",
-        "description": "Buy low in one city, sell high in another. Find the best transport routes."
-      },
       "craft": {
         "title": "Craft Calculator",
         "description": "Calculate craft profitability considering city bonuses, focus usage, and your specialization."
       },
       "flipper": {
-        "title": "Market Flipper",
-        "description": "Buy sell orders and resell higher in the same city. Find the best margins."
+        "title": "Flipper",
+        "description": "Buy low in one city, sell high in another. Find the best transport routes."
       },
       "blackMarket": {
         "title": "Black Market",
@@ -68,16 +63,14 @@
       "free": "free"
     }
   },
-  "transport": {
+  "flipper": {
     "title": "Transport Arbitrage",
     "description": "Find the best transport opportunities between cities",
     "filters": {
       "minProfit": "Minimum profit",
-      "tax": "Tax (%)",
       "fromCity": "Source city",
       "toCity": "Destination city",
-      "allCities": "All cities",
-      "apply": "Apply"
+      "allCities": "All cities"
     },
     "table": {
       "item": "Item",
@@ -117,28 +110,6 @@
     },
     "cityBonus": "City bonus (+15% craft)",
     "noRecipe": "No recipe available for this item."
-  },
-  "flipper": {
-    "title": "Market Flipper",
-    "description": "Find the best flip opportunities in each city",
-    "filters": {
-      "city": "City",
-      "minMargin": "Minimum margin",
-      "category": "Category",
-      "allCategories": "All categories",
-      "apply": "Apply"
-    },
-    "table": {
-      "item": "Item",
-      "buyOrder": "Buy order",
-      "sellOrder": "Sell order",
-      "margin": "Margin",
-      "marginPercent": "Margin %",
-      "quality": "Quality"
-    },
-    "loading": "Loading...",
-    "noData": "No flip opportunities found.",
-    "error": "Error loading data."
   },
   "blackMarket": {
     "title": "Black Market Arbitrage",

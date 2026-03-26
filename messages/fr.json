@@ -1,7 +1,6 @@
 {
   "nav": {
     "home": "Accueil",
-    "transport": "Transport",
     "craft": "Craft",
     "flipper": "Flipper",
     "blackMarket": "Black Market",
@@ -44,17 +43,13 @@
     "subtitle": "Opportunités économiques pour Albion Online",
     "description": "Identifiez les meilleures opportunités de profit : transport inter-cités, craft rentable, market flipping et Black Market arbitrage.",
     "cards": {
-      "transport": {
-        "title": "Transport Arbitrage",
-        "description": "Achetez bas dans une ville, vendez haut dans une autre. Trouvez les meilleures routes de transport."
-      },
       "craft": {
         "title": "Calculateur de Craft",
         "description": "Calculez la rentabilité du craft en tenant compte des bonus de villes, du focus et de votre spécialisation."
       },
       "flipper": {
-        "title": "Market Flipper",
-        "description": "Achetez des ordres de vente et revendez plus cher dans la même ville. Trouvez les meilleures marges."
+        "title": "Flipper",
+        "description": "Achetez bas dans une ville, vendez haut dans une autre. Trouvez les meilleures routes de transport."
       },
       "blackMarket": {
         "title": "Black Market",
@@ -67,30 +62,6 @@
       "minutes": "toutes les 30 min",
       "free": "gratuit"
     }
-  },
-  "transport": {
-    "title": "Transport Arbitrage",
-    "description": "Trouvez les meilleures opportunités de transport entre les villes",
-    "filters": {
-      "minProfit": "Profit minimum",
-      "tax": "Taxe (%)",
-      "fromCity": "Ville de départ",
-      "toCity": "Ville d'arrivée",
-      "allCities": "Toutes les villes",
-      "apply": "Appliquer"
-    },
-    "table": {
-      "item": "Item",
-      "from": "De",
-      "to": "Vers",
-      "buyPrice": "Prix d'achat",
-      "sellPrice": "Prix de vente",
-      "profit": "Profit",
-      "profitPercent": "Profit %"
-    },
-    "loading": "Chargement des prix...",
-    "noData": "Aucune opportunité trouvée. Essayez d'ajuster les filtres.",
-    "error": "Erreur lors du chargement des données. Réessayez."
   },
   "craft": {
     "title": "Calculateur de Craft",
@@ -119,26 +90,26 @@
     "noRecipe": "Pas de recette disponible pour cet item."
   },
   "flipper": {
-    "title": "Market Flipper",
-    "description": "Trouvez les meilleures opportunités de flip dans chaque ville",
+    "title": "Flipper",
+    "description": "Achetez bas dans une ville, vendez haut dans une autre",
     "filters": {
-      "city": "Ville",
-      "minMargin": "Marge minimum",
-      "category": "Catégorie",
-      "allCategories": "Toutes catégories",
-      "apply": "Appliquer"
+      "minProfit": "Profit minimum",
+      "fromCity": "Ville de départ",
+      "toCity": "Ville d'arrivée",
+      "allCities": "Toutes les villes"
     },
     "table": {
       "item": "Item",
-      "buyOrder": "Ordre d'achat",
-      "sellOrder": "Ordre de vente",
-      "margin": "Marge",
-      "marginPercent": "Marge %",
-      "quality": "Qualité"
+      "from": "De",
+      "to": "Vers",
+      "buyPrice": "Prix d'achat",
+      "sellPrice": "Prix de vente",
+      "profit": "Profit",
+      "profitPercent": "Profit %"
     },
-    "loading": "Chargement...",
-    "noData": "Aucune opportunité de flip trouvée.",
-    "error": "Erreur lors du chargement."
+    "loading": "Chargement des prix...",
+    "noData": "Aucune opportunité trouvée. Essayez d'ajuster les filtres.",
+    "error": "Erreur lors du chargement des données. Réessayez."
   },
   "blackMarket": {
     "title": "Black Market Arbitrage",

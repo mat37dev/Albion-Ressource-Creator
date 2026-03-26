@@ -18,10 +18,10 @@ function HomeContent({ locale }: { locale: string }) {
 
   const features = [
     {
-      href: `/${locale}/transport`,
+      href: `/${locale}/flipper`,
       icon: ArrowLeftRight,
-      title: t("cards.transport.title"),
-      description: t("cards.transport.description"),
+      title: t("cards.flipper.title"),
+      description: t("cards.flipper.description"),
       color: "text-blue-400",
       bgColor: "bg-blue-400/10",
       border: "border-blue-400/20",
@@ -34,15 +34,6 @@ function HomeContent({ locale }: { locale: string }) {
       color: "text-orange-400",
       bgColor: "bg-orange-400/10",
       border: "border-orange-400/20",
-    },
-    {
-      href: `/${locale}/flipper`,
-      icon: Repeat,
-      title: t("cards.flipper.title"),
-      description: t("cards.flipper.description"),
-      color: "text-purple-400",
-      bgColor: "bg-purple-400/10",
-      border: "border-purple-400/20",
     },
     {
       href: `/${locale}/black-market`,
