@@ -136,16 +136,19 @@ export function BlackMarketClient() {
           <span className="font-medium text-white max-w-[160px] truncate">{opp.itemName}</span>
         </div>
       ),
+      sortValue: (opp) => opp.itemName,
     },
     {
       key: "localPrice",
       header: localPriceHeader,
       render: (opp) => <span className="text-gray-300">{formatSilver(opp.buyOrderPrice)}</span>,
+      sortValue: (opp) => opp.buyOrderPrice,
     },
     {
       key: "bmPrice",
       header: bmPriceHeader,
       render: (opp) => <span className="text-gray-300">{formatSilver(opp.sellOrderPrice)}</span>,
+      sortValue: (opp) => opp.sellOrderPrice,
     },
     {
       key: "profit",
@@ -155,6 +158,7 @@ export function BlackMarketClient() {
           {formatSilver(opp.margin)}
         </span>
       ),
+      sortValue: (opp) => opp.margin,
     },
     {
       key: "profitPercent",
@@ -165,6 +169,7 @@ export function BlackMarketClient() {
           {formatPercent(opp.marginPercent)}
         </span>
       ),
+      sortValue: (opp) => opp.marginPercent,
     },
     {
       key: "lastUpdated",
@@ -179,6 +184,7 @@ export function BlackMarketClient() {
           </span>
         );
       },
+      sortValue: (opp) => opp.lastUpdated ? new Date(opp.lastUpdated).getTime() : 0,
     },
   ];
 
@@ -313,6 +319,8 @@ export function BlackMarketClient() {
       <OpportunityTable
         rows={opportunities}
         columns={columns}
+        defaultSortKey="profit"
+        defaultSortDir="desc"
         title={
           opportunities.length > 0
             ? `${opportunities.length} opportunités — ${fromCity} → Black Market`
