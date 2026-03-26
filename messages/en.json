@@ -5,7 +5,8 @@
     "flipper": "Flipper",
     "blackMarket": "Black Market",
     "settings": "Settings",
-    "profile": "Profile"
+    "profile": "Profile",
+    "inventory": "Inventory"
   },
   "auth": {
     "loginTitle": "Sign In",
@@ -204,6 +205,100 @@
       "bag": "Bags",
       "cape": "Capes"
     }
+  },
+  "inventory": {
+    "title": "Virtual Inventory",
+    "description": "Manage your purchased resources and track their real cost",
+    "addItem": "Add Item",
+    "craftFromInventory": "Craft from Inventory",
+    "noItems": "No items in inventory. Add your purchased resources.",
+    "filterAll": "All",
+    "filterBought": "Purchased",
+    "filterCrafted": "Crafted",
+    "filterRrr": "RRR Returns",
+    "columns": {
+      "item": "Item",
+      "quantity": "Quantity",
+      "pricePerUnit": "Price/Unit",
+      "total": "Total",
+      "source": "Source",
+      "date": "Date"
+    },
+    "sources": {
+      "bought": "Purchase",
+      "crafted": "Crafted",
+      "rrr_return": "RRR Return"
+    },
+    "addModal": {
+      "title": "Add Item to Inventory",
+      "selectItem": "Select an item",
+      "quantity": "Quantity",
+      "pricePerUnit": "Price per unit (silver)",
+      "source": "Source",
+      "notes": "Notes (optional)",
+      "cancel": "Cancel",
+      "confirm": "Add",
+      "adding": "Adding..."
+    },
+    "deleteConfirm": "Delete this inventory row?",
+    "deleteCancel": "Cancel",
+    "deleteConfirmBtn": "Delete",
+    "deleting": "Deleting...",
+    "editQuantity": "Edit quantity",
+    "saving": "Saving...",
+    "errors": {
+      "loadFailed": "Failed to load inventory",
+      "addFailed": "Failed to add item",
+      "deleteFailed": "Failed to delete item",
+      "updateFailed": "Failed to update item"
+    }
+  },
+  "craftInventory": {
+    "title": "Craft from Inventory",
+    "description": "Craft using your resources at their real purchase price",
+    "tabs": {
+      "items": "Items to Craft",
+      "settings": "Settings",
+      "resources": "Resources",
+      "results": "Results"
+    },
+    "resources": {
+      "fromInventory": "From Inventory",
+      "toBuy": "Additional Purchases",
+      "material": "Material",
+      "stockQty": "Stock",
+      "qtyUsed": "Qty Used",
+      "pricePerUnit": "Price/Unit",
+      "qtyNeeded": "Qty Needed",
+      "buyCity": "Buy City",
+      "totalCost": "Total Cost",
+      "noInventoryItems": "No resources available in inventory",
+      "noAdditionalPurchases": "All resources are covered by inventory"
+    },
+    "results": {
+      "inventoryCost": "Inventory cost",
+      "additionalCost": "Additional purchases",
+      "rrrReturns": "RRR Returns",
+      "rrrFromInventory": "RRR from inventory",
+      "rrrFromMarket": "RRR from purchases",
+      "totalRevenue": "Total revenue",
+      "totalProfit": "Total net profit",
+      "validate": "Validate Craft",
+      "validating": "Validating...",
+      "loginRequired": "Sign in to validate"
+    },
+    "confirmModal": {
+      "title": "Confirm Craft",
+      "consumedTitle": "Resources consumed (inventory)",
+      "purchasesTitle": "Additional purchases",
+      "craftedTitle": "Crafted items",
+      "rrrTitle": "RRR Returns",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "confirming": "Processing..."
+    },
+    "success": "Craft validated! Inventory updated.",
+    "error": "Error validating craft"
   },
   "footer": {
     "disclaimer": "This site is not affiliated with Sandbox Interactive or Albion Online.",

@@ -4,9 +4,11 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import type { Session } from "next-auth";
+import Link from "next/link";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Package } from "lucide-react";
 
 interface Props {
   locale: string;
@@ -15,6 +17,7 @@ interface Props {
 
 export function ProfileClient({ locale, session }: Props) {
   const t = useTranslations("auth");
+  const tNav = useTranslations("nav");
   const [name, setName] = useState(session.user.name ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
@@ -77,7 +80,13 @@ export function ProfileClient({ locale, session }: Props) {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-albion-blue/30">
+        <div className="mt-8 pt-6 border-t border-albion-blue/30 flex flex-wrap items-center gap-3">
+          <Button asChild variant="outline" className="border-albion-gold/40 text-albion-gold hover:bg-albion-gold/10">
+            <Link href={`/${locale}/inventory`}>
+              <Package className="h-4 w-4 mr-2" />
+              {tNav("inventory")}
+            </Link>
+          </Button>
           <Button
             variant="outline"
             onClick={() => signOut({ callbackUrl: `/${locale}` })}
