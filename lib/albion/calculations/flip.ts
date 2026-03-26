@@ -13,6 +13,7 @@ export interface FlipOpportunity {
   marginPercent: number;
   roi: number;
   quality: number;
+  lastUpdated?: string; // ISO date string of the oldest price between buy and sell
 }
 
 const MARKET_TAX = 0.045;
@@ -116,6 +117,24 @@ export function findBlackMarketOpportunities(
     const profitPercent =
       buyPrice > 0 ? Math.round((profit / buyPrice) * 100 * 10) / 10 : 0;
 
+    // Pick the relevant date for each side based on the trade mode
+    const buyDate =
+      buyMode === "direct"
+        ? localPrice.sell_price_min_date
+        : localPrice.buy_price_max_date;
+    const sellDate =
+      sellMode === "direct"
+        ? bmPrice.buy_price_max_date
+        : bmPrice.sell_price_min_date;
+
+    // Keep the oldest date (most stale) so the user knows the worst-case freshness
+    const lastUpdated =
+      buyDate && sellDate
+        ? new Date(buyDate) < new Date(sellDate)
+          ? buyDate
+          : sellDate
+        : buyDate || sellDate;
+
     opportunities.push({
       itemId: localPrice.item_id,
       itemName: itemNames[localPrice.item_id] || localPrice.item_id,
@@ -126,6 +145,7 @@ export function findBlackMarketOpportunities(
       marginPercent: profitPercent,
       roi: profitPercent,
       quality: localPrice.quality,
+      lastUpdated,
     });
   }
 

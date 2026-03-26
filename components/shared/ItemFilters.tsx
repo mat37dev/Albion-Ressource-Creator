@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { getCategoriesMetadata } from "@/lib/albion/items";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,8 +39,7 @@ export function ItemFilters({
   translationKey = "admin.items.filters"
 }: ItemFiltersProps) {
   const t = useTranslations(translationKey);
-  const locale = useLocale();
-  const localeCode = locale === "fr" ? "fr" : "en";
+  const tItems = useTranslations("items");
 
   const categories = getCategoriesMetadata();
   const selectedCategory = categories.find((c) => c.id === filters.category);
@@ -122,7 +121,7 @@ export function ItemFilters({
               <SelectItem value="all">{t("allCategories")}</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
-                  {localeCode === "fr" ? cat.nameFR : cat.nameEN}
+                  {tItems(`categories.${cat.id}`)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -144,9 +143,9 @@ export function ItemFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("allSubcategories")}</SelectItem>
-                {selectedCategory.subcategories.map((sub) => (
-                  <SelectItem key={sub.id} value={sub.id}>
-                    {localeCode === "fr" ? sub.nameFR : sub.nameEN}
+                {selectedCategory.subcategories.map((subId) => (
+                  <SelectItem key={subId} value={subId}>
+                    {tItems(`subcategories.${subId}`)}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -144,108 +144,21 @@ export function getItemIconUrlsByTier(
 
 export interface CategoryInfo {
   id: ItemCategory;
-  nameEN: string;
-  nameFR: string;
-  subcategories: SubcategoryInfo[];
-}
-
-export interface SubcategoryInfo {
-  id: string;
-  nameEN: string;
-  nameFR: string;
+  subcategories: string[];
 }
 
 /**
- * Returns static metadata about item categories and subcategories.
- * This is NOT dynamic data - it's the canonical category structure.
+ * Returns the canonical category/subcategory structure.
+ * Use the "items.categories" and "items.subcategories" translation keys for labels.
  */
 export function getCategoriesMetadata(): CategoryInfo[] {
   return [
-    {
-      id: "resource_raw",
-      nameEN: "Raw Resources",
-      nameFR: "Ressources brutes",
-      subcategories: [
-        { id: "ore", nameEN: "Ore", nameFR: "Minerai" },
-        { id: "wood", nameEN: "Wood", nameFR: "Bois" },
-        { id: "fiber", nameEN: "Fiber", nameFR: "Fibres" },
-        { id: "hide", nameEN: "Hide", nameFR: "Peaux" },
-        { id: "rock", nameEN: "Rock", nameFR: "Pierres" },
-      ],
-    },
-    {
-      id: "resource_refined",
-      nameEN: "Refined Resources",
-      nameFR: "Ressources raffinées",
-      subcategories: [
-        { id: "metalbar", nameEN: "Metal Bars", nameFR: "Barres de métal" },
-        { id: "planks", nameEN: "Planks", nameFR: "Planches" },
-        { id: "cloth", nameEN: "Cloth", nameFR: "Tissu" },
-        { id: "leather", nameEN: "Leather", nameFR: "Cuir" },
-        { id: "stoneblock", nameEN: "Stone Blocks", nameFR: "Blocs de pierre" },
-      ],
-    },
-    {
-      id: "weapon",
-      nameEN: "Weapons",
-      nameFR: "Armes",
-      subcategories: [
-        { id: "sword", nameEN: "Swords", nameFR: "Épées" },
-        { id: "axe", nameEN: "Axes", nameFR: "Haches" },
-        { id: "mace", nameEN: "Maces", nameFR: "Masses" },
-        { id: "hammer", nameEN: "Hammers", nameFR: "Marteaux" },
-        { id: "spear", nameEN: "Spears", nameFR: "Lances" },
-        { id: "dagger", nameEN: "Daggers", nameFR: "Dagues" },
-        { id: "quarterstaff", nameEN: "Quarterstaffs", nameFR: "Bâtons" },
-        { id: "bow", nameEN: "Bows", nameFR: "Arcs" },
-        { id: "crossbow", nameEN: "Crossbows", nameFR: "Arbalètes" },
-        { id: "fire", nameEN: "Fire Staffs", nameFR: "Bâtons de feu" },
-        { id: "frost", nameEN: "Frost Staffs", nameFR: "Bâtons de givre" },
-        { id: "arcane", nameEN: "Arcane Staffs", nameFR: "Bâtons arcaniques" },
-        { id: "curse", nameEN: "Curse Staffs", nameFR: "Bâtons maudits" },
-        { id: "holy", nameEN: "Holy Staffs", nameFR: "Bâtons saints" },
-        { id: "nature", nameEN: "Nature Staffs", nameFR: "Bâtons de nature" },
-        { id: "shapeshifter", nameEN: "Shapeshifter", nameFR: "Métamorphe" },
-      ],
-    },
-    {
-      id: "armor",
-      nameEN: "Armor",
-      nameFR: "Armures",
-      subcategories: [
-        { id: "plate", nameEN: "Plate Armor", nameFR: "Armure en plaques" },
-        { id: "leather", nameEN: "Leather Armor", nameFR: "Armure en cuir" },
-        { id: "cloth", nameEN: "Cloth Armor", nameFR: "Armure en tissu" },
-      ],
-    },
-    {
-      id: "offhand",
-      nameEN: "Offhand",
-      nameFR: "Main gauche",
-      subcategories: [
-        { id: "shield", nameEN: "Shields", nameFR: "Boucliers" },
-        { id: "tome", nameEN: "Tomes", nameFR: "Tomes" },
-        { id: "orb", nameEN: "Orbs", nameFR: "Orbes" },
-        { id: "torch", nameEN: "Torches", nameFR: "Torches" },
-      ],
-    },
-    {
-      id: "consumable",
-      nameEN: "Consumables",
-      nameFR: "Consommables",
-      subcategories: [
-        { id: "food", nameEN: "Food", nameFR: "Nourriture" },
-        { id: "potion", nameEN: "Potions", nameFR: "Potions" },
-      ],
-    },
-    {
-      id: "accessory",
-      nameEN: "Accessories",
-      nameFR: "Accessoires",
-      subcategories: [
-        { id: "bag", nameEN: "Bags", nameFR: "Sacs" },
-        { id: "cape", nameEN: "Capes", nameFR: "Capes" },
-      ],
-    },
+    { id: "resource_raw",      subcategories: ["ore", "wood", "fiber", "hide", "rock"] },
+    { id: "resource_refined",  subcategories: ["metalbar", "planks", "cloth", "leather", "stoneblock"] },
+    { id: "weapon",            subcategories: ["sword", "axe", "mace", "hammer", "spear", "dagger", "quarterstaff", "bow", "crossbow", "fire", "frost", "arcane", "curse", "holy", "nature", "shapeshifter"] },
+    { id: "armor",             subcategories: ["plate", "leather", "cloth"] },
+    { id: "offhand",           subcategories: ["shield", "tome", "orb", "torch"] },
+    { id: "consumable",        subcategories: ["food", "potion"] },
+    { id: "accessory",         subcategories: ["bag", "cape"] },
   ];
 }

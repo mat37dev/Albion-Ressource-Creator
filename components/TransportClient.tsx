@@ -6,7 +6,6 @@ import { CITIES } from "@/lib/constants/cities";
 import { findTransportOpportunities } from "@/lib/albion/calculations/transport";
 import { PREMIUM_TAX_DIRECT, NON_PREMIUM_TAX_DIRECT } from "@/lib/constants/bonuses";
 import { useAlbionItems } from "@/lib/hooks/useAlbionItems";
-import { getItemNames } from "@/lib/utils/item-names";
 import { formatSilver, formatPercent, getProfitColor } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,18 +57,17 @@ export function TransportClient() {
   const [toCity, setToCity] = useState<string>("all");
   const [sortCol, setSortCol] = useState<SortCol>("profit");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [itemNames, setItemNames] = useState<Record<string, string>>({});
   const [buyType, setBuyType] = useState<"direct" | "order">("direct");
   const [sellType, setSellType] = useState<"direct" | "order">("order");
 
   // useMemo pour stabiliser la référence et éviter des re-renders en boucle
   const itemIds = useMemo(() => dbItems.map((item) => item.id), [dbItems]);
 
-  // Noms traduits depuis la DB selon la locale
-  useEffect(() => {
-    if (itemIds.length === 0) return;
-    getItemNames(itemIds, locale).then(setItemNames);
-  }, [itemIds, locale]);
+  // Noms traduits directement depuis les données DB déjà chargées
+  const itemNames = useMemo(
+    () => Object.fromEntries(dbItems.map((item) => [item.id, locale === "fr" ? item.nameFR : item.nameEN])),
+    [dbItems, locale]
+  );
 
   const loadPrices = useCallback(async () => {
     if (itemIds.length === 0) return;

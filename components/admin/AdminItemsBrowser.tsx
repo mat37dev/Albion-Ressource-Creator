@@ -15,6 +15,7 @@ import { ItemIcon } from "@/components/ui/item-icon";
 
 export function AdminItemsBrowser() {
   const t = useTranslations("admin.items");
+  const tItems = useTranslations("items");
   const locale = useLocale();
   const localeCode = locale === "fr" ? "fr" : "en";
   const [category, setCategory] = useState<string | undefined>(undefined);
@@ -115,7 +116,7 @@ export function AdminItemsBrowser() {
                   <SelectItem value="all">{t("filters.allCategories")}</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {localeCode === "fr" ? cat.nameFR : cat.nameEN}
+                      {tItems(`categories.${cat.id}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -139,9 +140,9 @@ export function AdminItemsBrowser() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("filters.allSubcategories")}</SelectItem>
-                    {selectedCategory.subcategories.map((sub) => (
-                      <SelectItem key={sub.id} value={sub.id}>
-                        {localeCode === "fr" ? sub.nameFR : sub.nameEN}
+                    {selectedCategory.subcategories.map((subId) => (
+                      <SelectItem key={subId} value={subId}>
+                        {tItems(`subcategories.${subId}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -360,14 +361,14 @@ export function AdminItemsBrowser() {
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">{t("details.category")}</label>
-                  <p className="text-sm font-medium capitalize">
-                    {selectedItem.category.replace("_", " ")}
+                  <p className="text-sm font-medium">
+                    {tItems(`categories.${selectedItem.category}`)}
                   </p>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">{t("details.subcategory")}</label>
-                  <p className="text-sm font-medium capitalize">
-                    {selectedItem.subcategory}
+                  <p className="text-sm font-medium">
+                    {tItems(`subcategories.${selectedItem.subcategory}`)}
                   </p>
                 </div>
                 {selectedItem.isArtifact && (

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useState, useCallback, useMemo } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { CITIES, type City } from "@/lib/constants/cities";
 import { findBlackMarketOpportunities, type TradeMode } from "@/lib/albion/calculations/flip";
 import { useAlbionItems } from "@/lib/hooks/useAlbionItems";
@@ -12,11 +12,30 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OpportunityTable, type ColumnDef } from "@/components/OpportunityTable";
 import { ItemIcon } from "@/components/ui/item-icon";
-import { RefreshCw, TrendingUp, Store, Loader2 } from "lucide-react";
+import { RefreshCw, TrendingUp, Store, Loader2, Clock } from "lucide-react";
 import type { PriceData } from "@/lib/albion/api";
 import type { FlipOpportunity } from "@/lib/albion/calculations/flip";
 
 const BATCH_SIZE = 50;
+
+function formatRelativeTime(isoDate: string): { label: string; color: string } {
+  const date = new Date(isoDate);
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+
+  let label: string;
+  if (diffMin < 1) label = "< 1min";
+  else if (diffMin < 60) label = `${diffMin}min`;
+  else if (diffMin < 1440) label = `${Math.floor(diffMin / 60)}h`;
+  else label = `${Math.floor(diffMin / 1440)}j`;
+
+  let color: string;
+  if (diffMin < 60) color = "text-green-400";
+  else if (diffMin < 720) color = "text-yellow-400";
+  else color = "text-red-400";
+
+  return { label, color };
+}
 
 interface Progress {
   current: number;
@@ -25,6 +44,7 @@ interface Progress {
 
 export function BlackMarketClient() {
   const t = useTranslations("blackMarket");
+  const locale = useLocale() as "en" | "fr";
 
   const { items: dbItems, isLoading: itemsLoading } = useAlbionItems({
     categories: ["weapon", "armor", "offhand", "accessory"],
@@ -39,10 +59,11 @@ export function BlackMarketClient() {
   const [progress, setProgress] = useState<Progress | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const itemNames = Object.fromEntries(
-    dbItems.map((item) => [item.id, item.nameEN])
+  const itemNames = useMemo(
+    () => Object.fromEntries(dbItems.map((item) => [item.id, locale === "fr" ? item.nameFR : item.nameEN])),
+    [dbItems, locale]
   );
-  const itemIds = dbItems.map((item) => item.id);
+  const itemIds = useMemo(() => dbItems.map((item) => item.id), [dbItems]);
 
   const loadAndCalculate = useCallback(async () => {
     if (itemIds.length === 0) return;
@@ -144,6 +165,20 @@ export function BlackMarketClient() {
           {formatPercent(opp.marginPercent)}
         </span>
       ),
+    },
+    {
+      key: "lastUpdated",
+      header: t("table.lastUpdated"),
+      render: (opp) => {
+        if (!opp.lastUpdated) return <span className="text-gray-500">—</span>;
+        const { label, color } = formatRelativeTime(opp.lastUpdated);
+        return (
+          <span className={`flex items-center gap-1 ${color}`}>
+            <Clock className="h-3 w-3" />
+            {label}
+          </span>
+        );
+      },
     },
   ];
 

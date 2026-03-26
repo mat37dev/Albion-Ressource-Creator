@@ -163,7 +163,8 @@
       "bmPriceDirect": "Ordre BM",
       "bmPriceOrder": "Ordre de vente BM",
       "profit": "Profit",
-      "profitPercent": "Profit %"
+      "profitPercent": "Profit %",
+      "lastUpdated": "Actualisation"
     },
     "loading": "Chargement...",
     "noData": "Aucune opportunité Black Market trouvée.",
@@ -180,10 +181,58 @@
       "2": "Bon",
       "3": "Remarquable",
       "4": "Excellent",
-      "5": "Œuvre maîtresse"
+      "5": "Masterpiece"
     },
-    "silver": "argent",
+    "silver": "silver",
     "lastUpdated": "Dernière mise à jour"
+  },
+  "items": {
+    "categories": {
+      "weapon": "Armes",
+      "armor": "Armures",
+      "resource_raw": "Ressources brutes",
+      "resource_refined": "Ressources raffinées",
+      "offhand": "Main gauche",
+      "consumable": "Consommables",
+      "accessory": "Accessoires"
+    },
+    "subcategories": {
+      "ore": "Minerai",
+      "wood": "Bois",
+      "fiber": "Fibres",
+      "hide": "Peaux",
+      "rock": "Pierres",
+      "metalbar": "Barres de métal",
+      "planks": "Planches",
+      "cloth": "Tissu",
+      "leather": "Cuir",
+      "stoneblock": "Blocs de pierre",
+      "sword": "Épées",
+      "axe": "Haches",
+      "mace": "Masses",
+      "hammer": "Marteaux",
+      "spear": "Lances",
+      "dagger": "Dagues",
+      "quarterstaff": "Bâtons",
+      "bow": "Arcs",
+      "crossbow": "Arbalètes",
+      "fire": "Bâtons de feu",
+      "frost": "Bâtons de givre",
+      "arcane": "Bâtons arcaniques",
+      "curse": "Bâtons maudits",
+      "holy": "Bâtons bénis",
+      "nature": "Bâtons naturels",
+      "shapeshifter": "Bâtons de changeformes",
+      "plate": "Armure en plaques",
+      "shield": "Boucliers",
+      "tome": "Tomes",
+      "orb": "Orbes",
+      "torch": "Torches",
+      "food": "Nourriture",
+      "potion": "Potions",
+      "bag": "Sacs",
+      "cape": "Capes"
+    }
   },
   "footer": {
     "disclaimer": "Ce site n'est pas affilié avec Sandbox Interactive ou Albion Online.",
