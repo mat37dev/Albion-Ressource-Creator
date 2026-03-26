@@ -1,6 +1,8 @@
 import type { PriceData } from "../api";
 import type { City } from "../../constants/cities";
 
+export type TradeMode = "direct" | "order";
+
 export interface FlipOpportunity {
   itemId: string;
   itemName: string;
@@ -78,7 +80,9 @@ export function findBlackMarketOpportunities(
   localPrices: PriceData[],
   blackMarketPrices: PriceData[],
   itemNames: Record<string, string>,
-  minProfit: number = 1000
+  minProfit: number = 1000,
+  buyMode: TradeMode = "direct",
+  sellMode: TradeMode = "direct"
 ): FlipOpportunity[] {
   const opportunities: FlipOpportunity[] = [];
 
@@ -90,22 +94,34 @@ export function findBlackMarketOpportunities(
     const bmPrice = bmPriceMap.get(`${localPrice.item_id}_${localPrice.quality}`);
     if (!bmPrice) continue;
 
-    const buyPrice = localPrice.sell_price_min; // Buy from local market
-    const sellToBM = bmPrice.buy_price_max; // Black Market buy order
+    // Buy side: direct = fill local sell order, order = place buy order (use current buy_price_max)
+    const buyPrice =
+      buyMode === "direct"
+        ? localPrice.sell_price_min
+        : localPrice.buy_price_max;
 
-    if (!buyPrice || !sellToBM || buyPrice === 0 || sellToBM === 0) continue;
+    // Sell side: direct = fill BM buy order immediately, order = post sell order (BM sell_price_min)
+    const sellPrice =
+      sellMode === "direct"
+        ? bmPrice.buy_price_max
+        : bmPrice.sell_price_min;
 
-    const profit = Math.round(sellToBM * (1 - MARKET_TAX) - buyPrice * (1 + SETUP_FEE));
+    if (!buyPrice || !sellPrice || buyPrice === 0 || sellPrice === 0) continue;
+
+    const profit = Math.round(
+      sellPrice * (1 - MARKET_TAX) - buyPrice * (1 + SETUP_FEE)
+    );
     if (profit < minProfit) continue;
 
-    const profitPercent = buyPrice > 0 ? Math.round((profit / buyPrice) * 100 * 10) / 10 : 0;
+    const profitPercent =
+      buyPrice > 0 ? Math.round((profit / buyPrice) * 100 * 10) / 10 : 0;
 
     opportunities.push({
       itemId: localPrice.item_id,
       itemName: itemNames[localPrice.item_id] || localPrice.item_id,
       city: localPrice.city as City,
       buyOrderPrice: buyPrice,
-      sellOrderPrice: sellToBM,
+      sellOrderPrice: sellPrice,
       margin: profit,
       marginPercent: profitPercent,
       roi: profitPercent,

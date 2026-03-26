@@ -24,8 +24,8 @@ export const CITY_SLUGS: Record<City, string> = {
   Brecilien: "brecilien",
 };
 
-// Black Market is in Caerleon
-export const BLACK_MARKET_CITY = "Caerleon";
+// Black Market is a distinct AODP location from Caerleon (player market)
+export const BLACK_MARKET_CITY = "Black Market";
 
 export const CITY_COLORS: Record<City, string> = {
   Thetford: "#6B3E26",

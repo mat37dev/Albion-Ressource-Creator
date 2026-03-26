@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
 
     const category = searchParams.get('category');
+    const categoriesParam = searchParams.get('categories'); // multi-category filter
     const subcategory = searchParams.get('subcategory');
     const tier = searchParams.get('tier');
     const enchant = searchParams.get('enchant');
@@ -41,7 +42,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (category) {
+    if (categoriesParam) {
+      const cats = categoriesParam.split(',').filter((c) => c.length > 0);
+      if (cats.length > 0) conditions.push(inArray(albionItems.category, cats));
+    } else if (category) {
       conditions.push(eq(albionItems.category, category));
     }
 

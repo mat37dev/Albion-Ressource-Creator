@@ -8,11 +8,9 @@ export type ItemCategory =
   | "weapon"
   | "armor"
   | "offhand"
-  | "cape"
-  | "bag"
+  | "accessory"
   | "consumable"
-  | "mount"
-  | "accessory";
+  | "mount";
 
 export type WeaponSubcategory =
   // Melee

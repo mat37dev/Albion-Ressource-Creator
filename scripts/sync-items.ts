@@ -98,6 +98,11 @@ function detectCategory(id: string): string {
     return 'consumable';
   }
 
+  // 6. Accessories (bags + capes)
+  if (upper.match(/^T\d+_BAG/) || upper.includes('_CAPE')) {
+    return 'accessory';
+  }
+
   return 'other';
 }
 
@@ -143,6 +148,19 @@ function detectSubcategory(id: string): string {
   // Consumables
   if (upper.includes('_MEAL_')) return 'food';
   if (upper.includes('_POTION_')) return 'potion';
+
+  // Offhand subtypes
+  if (upper.includes('_OFF_')) {
+    if (upper.includes('_SHIELD')) return 'shield';
+    if (upper.includes('_TORCH')) return 'torch';
+    if (upper.includes('_BOOK')) return 'tome';
+    if (upper.includes('_ORB')) return 'orb';
+    return 'other';
+  }
+
+  // Accessories sub-types
+  if (upper.match(/^T\d+_BAG/)) return 'bag';
+  if (upper.includes('_CAPE')) return 'cape';
 
   return 'other';
 }

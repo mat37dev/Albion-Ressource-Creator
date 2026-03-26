@@ -7,6 +7,7 @@ import type { AlbionItem } from '@/lib/db/schema';
 
 interface ItemFilters {
   category?: string;
+  categories?: string[]; // filter by multiple categories at once
   subcategory?: string;
   tier?: number;
   minTier?: number;
@@ -34,7 +35,8 @@ const fetcher = (url: string) => fetch(url).then(r => r.json());
 export function useAlbionItems(filters?: ItemFilters) {
   const params = new URLSearchParams();
 
-  if (filters?.category) params.set('category', filters.category);
+  if (filters?.categories?.length) params.set('categories', filters.categories.join(','));
+  else if (filters?.category) params.set('category', filters.category);
   if (filters?.subcategory) params.set('subcategory', filters.subcategory);
   if (filters?.tier !== undefined) params.set('tier', filters.tier.toString());
   if (filters?.minTier !== undefined) params.set('minTier', filters.minTier.toString());

@@ -238,5 +238,14 @@ export function getCategoriesMetadata(): CategoryInfo[] {
         { id: "potion", nameEN: "Potions", nameFR: "Potions" },
       ],
     },
+    {
+      id: "accessory",
+      nameEN: "Accessories",
+      nameFR: "Accessoires",
+      subcategories: [
+        { id: "bag", nameEN: "Bags", nameFR: "Sacs" },
+        { id: "cape", nameEN: "Capes", nameFR: "Capes" },
+      ],
+    },
   ];
 }

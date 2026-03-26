@@ -3,72 +3,149 @@
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { CITIES, type City } from "@/lib/constants/cities";
-import { findBlackMarketOpportunities } from "@/lib/albion/calculations/flip";
+import { findBlackMarketOpportunities, type TradeMode } from "@/lib/albion/calculations/flip";
 import { useAlbionItems } from "@/lib/hooks/useAlbionItems";
 import { formatSilver, formatPercent, getProfitColor } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, TrendingUp, Store } from "lucide-react";
+import { OpportunityTable, type ColumnDef } from "@/components/OpportunityTable";
+import { ItemIcon } from "@/components/ui/item-icon";
+import { RefreshCw, TrendingUp, Store, Loader2 } from "lucide-react";
 import type { PriceData } from "@/lib/albion/api";
 import type { FlipOpportunity } from "@/lib/albion/calculations/flip";
+
+const BATCH_SIZE = 50;
+
+interface Progress {
+  current: number;
+  total: number;
+}
 
 export function BlackMarketClient() {
   const t = useTranslations("blackMarket");
 
-  // Load items from DB (weapons, armor, consumables for BM)
-  const { items: dbItems, isLoading: itemsLoading } = useAlbionItems({ limit: 100 });
+  const { items: dbItems, isLoading: itemsLoading } = useAlbionItems({
+    categories: ["weapon", "armor", "offhand", "accessory"],
+  });
 
   const [fromCity, setFromCity] = useState<City>("Lymhurst");
   const [minProfit, setMinProfit] = useState(5000);
+  const [buyMode, setBuyMode] = useState<TradeMode>("direct");
+  const [sellMode, setSellMode] = useState<TradeMode>("direct");
   const [opportunities, setOpportunities] = useState<FlipOpportunity[]>([]);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<Progress | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Build item names from DB items
   const itemNames = Object.fromEntries(
     dbItems.map((item) => [item.id, item.nameEN])
   );
   const itemIds = dbItems.map((item) => item.id);
 
   const loadAndCalculate = useCallback(async () => {
-    if (itemIds.length === 0) return; // Wait for items to load
+    if (itemIds.length === 0) return;
     setLoading(true);
+    setProgress(null);
     setError(null);
-    try {
-      // Fetch prices from selected city AND Caerleon (Black Market)
-      const params = new URLSearchParams({
-        items: itemIds.join(","),
-        locations: `${fromCity},Caerleon`,
-        qualities: "1",
-      });
-      const res = await fetch(`/api/prices?${params}`);
-      if (!res.ok) throw new Error("Failed");
-      const prices: PriceData[] = await res.json();
+    setOpportunities([]);
 
-      const localPrices = prices.filter(
+    try {
+      // Split item IDs into batches to avoid 431 Request Header Fields Too Large
+      const batches: string[][] = [];
+      for (let i = 0; i < itemIds.length; i += BATCH_SIZE) {
+        batches.push(itemIds.slice(i, i + BATCH_SIZE));
+      }
+
+      const allPrices: PriceData[] = [];
+      setProgress({ current: 0, total: batches.length });
+
+      for (let i = 0; i < batches.length; i++) {
+        const params = new URLSearchParams({
+          items: batches[i].join(","),
+          locations: `${fromCity},Black Market`,
+          qualities: "1",
+        });
+        const res = await fetch(`/api/prices?${params}`);
+        if (!res.ok) throw new Error("Failed");
+        const prices: PriceData[] = await res.json();
+        allPrices.push(...prices);
+        setProgress({ current: i + 1, total: batches.length });
+      }
+
+      const localPrices = allPrices.filter(
         (p) => p.city.toLowerCase() === fromCity.toLowerCase()
       );
-      const caerleonPrices = prices.filter(
-        (p) => p.city.toLowerCase() === "caerleon"
+      const bmPrices = allPrices.filter(
+        (p) => p.city.toLowerCase() === "black market"
       );
 
       const opps = findBlackMarketOpportunities(
         localPrices,
-        caerleonPrices,
+        bmPrices,
         itemNames,
-        minProfit
+        minProfit,
+        buyMode,
+        sellMode
       );
       setOpportunities(opps.slice(0, 50));
     } catch {
       setError(t("error"));
     } finally {
       setLoading(false);
+      setProgress(null);
     }
-  }, [fromCity, minProfit, itemIds, itemNames, t]);
+  }, [fromCity, minProfit, buyMode, sellMode, itemIds, itemNames, t]);
 
   const nonCaerleonCities = CITIES.filter((c) => c !== "Caerleon");
+
+  const localPriceHeader =
+    buyMode === "direct" ? t("table.localPriceDirect") : t("table.localPriceOrder");
+  const bmPriceHeader =
+    sellMode === "direct" ? t("table.bmPriceDirect") : t("table.bmPriceOrder");
+
+  const columns: ColumnDef<FlipOpportunity>[] = [
+    {
+      key: "item",
+      header: t("table.item"),
+      render: (opp) => (
+        <div className="flex items-center gap-2">
+          <ItemIcon item={opp.itemId} size={32} showTooltip={false} />
+          <span className="font-medium text-white max-w-[160px] truncate">{opp.itemName}</span>
+        </div>
+      ),
+    },
+    {
+      key: "localPrice",
+      header: localPriceHeader,
+      render: (opp) => <span className="text-gray-300">{formatSilver(opp.buyOrderPrice)}</span>,
+    },
+    {
+      key: "bmPrice",
+      header: bmPriceHeader,
+      render: (opp) => <span className="text-gray-300">{formatSilver(opp.sellOrderPrice)}</span>,
+    },
+    {
+      key: "profit",
+      header: t("table.profit"),
+      render: (opp) => (
+        <span className={`font-semibold ${getProfitColor(opp.margin)}`}>
+          {formatSilver(opp.margin)}
+        </span>
+      ),
+    },
+    {
+      key: "profitPercent",
+      header: t("table.profitPercent"),
+      render: (opp) => (
+        <span className={`flex items-center gap-1 ${getProfitColor(opp.marginPercent)}`}>
+          <TrendingUp className="h-3 w-3" />
+          {formatPercent(opp.marginPercent)}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -77,7 +154,7 @@ export function BlackMarketClient() {
           <CardTitle className="text-sm font-medium text-muted-foreground">Filtres</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t("filters.fromCity")}</label>
               <Select value={fromCity} onValueChange={(v) => setFromCity(v as City)}>
@@ -99,16 +176,77 @@ export function BlackMarketClient() {
                 onChange={(e) => setMinProfit(Number(e.target.value))}
               />
             </div>
-            <div className="flex items-end">
-              <Button
-                onClick={loadAndCalculate}
-                disabled={loading || itemsLoading}
-                className="w-full bg-red-500 hover:bg-red-600 text-white"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${(loading || itemsLoading) ? "animate-spin" : ""}`} />
-                {itemsLoading ? "Chargement items..." : loading ? t("loading") : "Analyser BM"}
-              </Button>
+            <div>
+              <label className="text-xs text-muted-foreground mb-2 block">{t("filters.buyMode")}</label>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant={buyMode === "direct" ? "default" : "outline"}
+                  className="flex-1 text-xs"
+                  onClick={() => setBuyMode("direct")}
+                >
+                  {t("filters.buyDirect")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={buyMode === "order" ? "default" : "outline"}
+                  className="flex-1 text-xs"
+                  onClick={() => setBuyMode("order")}
+                >
+                  {t("filters.buyOrder")}
+                </Button>
+              </div>
             </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-2 block">{t("filters.sellMode")}</label>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant={sellMode === "direct" ? "default" : "outline"}
+                  className="flex-1 text-xs"
+                  onClick={() => setSellMode("direct")}
+                >
+                  {t("filters.sellDirect")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={sellMode === "order" ? "default" : "outline"}
+                  className="flex-1 text-xs"
+                  onClick={() => setSellMode("order")}
+                >
+                  {t("filters.sellOrder")}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Button
+              onClick={loadAndCalculate}
+              disabled={loading || itemsLoading}
+              className="w-full bg-red-500 hover:bg-red-600 text-white"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${(loading || itemsLoading) ? "animate-spin" : ""}`} />
+              {itemsLoading
+                ? "Chargement items..."
+                : loading && progress
+                ? `Analyse en cours... (${progress.current}/${progress.total} lots)`
+                : loading
+                ? t("loading")
+                : "Analyser BM"}
+            </Button>
+            {loading && progress && (
+              <div className="mt-2">
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div
+                    className="bg-red-500 h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 text-center">
+                  {Math.round((progress.current / progress.total) * 100)}% — {itemIds.length} items analysés par lots de {BATCH_SIZE}
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -128,46 +266,24 @@ export function BlackMarketClient() {
         </Card>
       )}
 
-      {opportunities.length > 0 && (
+      {loading && progress && progress.current > 0 && opportunities.length === 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">
-              {opportunities.length} opportunités — {fromCity} → Caerleon BM
-            </CardTitle>
-          </CardHeader>
-          <div className="overflow-x-auto">
-            <table className="albion-table">
-              <thead>
-                <tr>
-                  <th>{t("table.item")}</th>
-                  <th>{t("table.localPrice")}</th>
-                  <th>{t("table.bmBuyOrder")}</th>
-                  <th>{t("table.profit")}</th>
-                  <th>{t("table.profitPercent")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {opportunities.map((opp, i) => (
-                  <tr key={i}>
-                    <td className="font-medium text-white max-w-[200px] truncate">{opp.itemName}</td>
-                    <td className="text-gray-300">{formatSilver(opp.buyOrderPrice)}</td>
-                    <td className="text-gray-300">{formatSilver(opp.sellOrderPrice)}</td>
-                    <td className={`font-semibold ${getProfitColor(opp.margin)}`}>
-                      {formatSilver(opp.margin)}
-                    </td>
-                    <td>
-                      <span className={`flex items-center gap-1 ${getProfitColor(opp.marginPercent)}`}>
-                        <TrendingUp className="h-3 w-3" />
-                        {formatPercent(opp.marginPercent)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            <Loader2 className="h-8 w-8 mx-auto mb-3 animate-spin opacity-50" />
+            <p className="text-sm">Récupération des prix en cours...</p>
+          </CardContent>
         </Card>
       )}
+
+      <OpportunityTable
+        rows={opportunities}
+        columns={columns}
+        title={
+          opportunities.length > 0
+            ? `${opportunities.length} opportunités — ${fromCity} → Black Market`
+            : undefined
+        }
+      />
     </div>
   );
 }

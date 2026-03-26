@@ -147,13 +147,21 @@
     "filters": {
       "fromCity": "Buy from",
       "minProfit": "Minimum profit",
+      "buyMode": "Buy mode",
+      "sellMode": "Sell mode",
+      "buyDirect": "Direct buy",
+      "buyOrder": "Buy order",
+      "sellDirect": "Direct sell",
+      "sellOrder": "Sell order",
       "apply": "Apply"
     },
     "table": {
       "item": "Item",
       "buyCity": "Buy city",
-      "localPrice": "Local price",
-      "bmBuyOrder": "BM buy order",
+      "localPriceDirect": "Direct buy",
+      "localPriceOrder": "Buy order",
+      "bmPriceDirect": "BM buy order",
+      "bmPriceOrder": "BM sell order",
       "profit": "Profit",
       "profitPercent": "Profit %"
     },

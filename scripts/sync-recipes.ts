@@ -99,6 +99,11 @@ function detectCategory(id: string): string {
     return 'consumable';
   }
 
+  // Accessories (bags + capes)
+  if (upper.match(/^T\d+_BAG/) || upper.includes('_CAPE')) {
+    return 'accessory';
+  }
+
   return 'other';
 }
 
