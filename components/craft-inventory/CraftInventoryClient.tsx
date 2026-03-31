@@ -10,6 +10,7 @@ import { isRRRExempt, computeRRRQuantity } from "@/lib/albion/utils/rrr";
 import { ItemSelectionTab } from "@/components/craft-batch/ItemSelectionTab";
 import { SettingsTab } from "@/components/craft-batch/SettingsTab";
 import { ItemIcon } from "@/components/ui/item-icon";
+import { LotSelector } from "@/components/craft-inventory/LotSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { CITIES, City } from "@/lib/constants/cities";
-import { formatSilver, getProfitColor } from "@/lib/utils";
+import { formatSilver, getProfitColor, formatQuantity } from "@/lib/utils";
 import { getItemNames } from "@/lib/utils/item-names";
 import {
   PREMIUM_TAX_DIRECT,
@@ -33,7 +34,6 @@ import {
   NON_PREMIUM_TAX_DIRECT,
   NON_PREMIUM_TAX_ORDER,
 } from "@/lib/constants/bonuses";
-import type { ToBuyItem, FromInventoryItem } from "@/lib/albion/utils/inventory-craft";
 
 interface Props {
   locale: string;
@@ -51,12 +51,23 @@ export function CraftInventoryClient({ locale }: Props) {
   const [toBuyPrices, setToBuyPrices] = useState<Record<string, number>>({});
   const [toBuyCities, setToBuyCities] = useState<Record<string, City>>({});
   const [loadingPrices, setLoadingPrices] = useState(false);
+  const [loadingRecalculate, setLoadingRecalculate] = useState(false);
 
   // Confirmation modal
   const [showConfirm, setShowConfirm] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [validateError, setValidateError] = useState<string | null>(null);
   const [validateSuccess, setValidateSuccess] = useState(false);
+
+  // Workflow states (craft → sell)
+  const [isCraftValidated, setIsCraftValidated] = useState(false);
+  const [craftedItemIds, setCraftedItemIds] = useState<string[]>([]);
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [isSelling, setIsSelling] = useState(false);
+  const [sellError, setSellError] = useState<string | null>(null);
+
+  // Manual lot selection (key: materialId, value: array of lotIds ordered by consumption preference)
+  const [manualLotSelection, setManualLotSelection] = useState<Record<string, string[]>>({});
 
   // Compute effective materials (with RRR applied)
   const effectiveMaterials = useMemo(() => {
@@ -85,10 +96,15 @@ export function CraftInventoryClient({ locale }: Props) {
   const { fromInventory, toBuy } = useMemo(
     () =>
       splitMaterialNeeds(
-        effectiveMaterials.map((m) => ({ materialId: m.materialId, effectiveQuantity: m.effectiveQuantity })),
-        inventory
+        effectiveMaterials.map((m) => ({
+          materialId: m.materialId,
+          rawQuantity: m.rawQuantity,
+          effectiveQuantity: m.effectiveQuantity
+        })),
+        inventory,
+        manualLotSelection
       ),
-    [effectiveMaterials, inventory]
+    [effectiveMaterials, inventory, manualLotSelection]
   );
 
   // Load material names + crafted item names
@@ -102,22 +118,51 @@ export function CraftInventoryClient({ locale }: Props) {
   }, [effectiveMaterials, craftBatch.batchState.items, localeCode]);
 
   // Initialize toBuy prices/cities when materials change
+  const toBuyIds = useMemo(() => toBuy.map((m) => m.materialId).join(","), [toBuy]);
+
   useEffect(() => {
+    if (toBuy.length === 0) return;
+
     setToBuyPrices((prev) => {
       const next = { ...prev };
+      let changed = false;
       for (const item of toBuy) {
-        if (next[item.materialId] === undefined) next[item.materialId] = 0;
+        if (next[item.materialId] === undefined) {
+          next[item.materialId] = 0;
+          changed = true;
+        }
       }
-      return next;
+      return changed ? next : prev;
     });
+
     setToBuyCities((prev) => {
       const next = { ...prev };
+      let changed = false;
       for (const item of toBuy) {
-        if (!next[item.materialId]) next[item.materialId] = "Lymhurst";
+        if (!next[item.materialId]) {
+          next[item.materialId] = "Lymhurst";
+          changed = true;
+        }
       }
-      return next;
+      return changed ? next : prev;
     });
-  }, [toBuy]);
+  }, [toBuyIds, toBuy]);
+
+  // Reset validation state when parameters change
+  const itemsFingerprint = useMemo(
+    () => JSON.stringify(craftBatch.batchState.items.map(i => ({ id: i.id, qty: i.quantity, price: i.customSellPrice }))),
+    [craftBatch.batchState.items]
+  );
+  const pricesFingerprint = useMemo(() => JSON.stringify(toBuyPrices), [toBuyPrices]);
+  const lotsFingerprint = useMemo(() => JSON.stringify(manualLotSelection), [manualLotSelection]);
+
+  useEffect(() => {
+    if (isCraftValidated) {
+      setIsCraftValidated(false);
+      setCraftedItemIds([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsFingerprint, pricesFingerprint, lotsFingerprint]);
 
   const handleLoadPrices = async () => {
     if (toBuy.length === 0) return;
@@ -155,6 +200,42 @@ export function CraftInventoryClient({ locale }: Props) {
     }
   };
 
+  const handleRecalculatePrices = async () => {
+    if (toBuy.length === 0) return;
+    setLoadingRecalculate(true);
+    try {
+      const ids = toBuy.map((m) => m.materialId);
+      const BATCH = 50;
+      const allPrices: any[] = [];
+      for (let i = 0; i < ids.length; i += BATCH) {
+        const batch = ids.slice(i, i + BATCH);
+        const params = new URLSearchParams({
+          items: batch.join(","),
+          locations: CITIES.join(","),
+          qualities: "1",
+        });
+        const res = await fetch(`/api/prices?${params}`);
+        if (!res.ok) continue;
+        const data = await res.json();
+        allPrices.push(...data);
+      }
+      const newPrices: Record<string, number> = {};
+      const newCities: Record<string, City> = {};
+      for (const mat of toBuy) {
+        const prices = allPrices.filter((p) => p.item_id === mat.materialId && p.sell_price_min > 0);
+        if (prices.length > 0) {
+          const best = prices.sort((a: any, b: any) => a.sell_price_min - b.sell_price_min)[0];
+          newPrices[mat.materialId] = best.sell_price_min;
+          newCities[mat.materialId] = best.city as City;
+        }
+      }
+      setToBuyPrices((prev) => ({ ...prev, ...newPrices }));
+      setToBuyCities((prev) => ({ ...prev, ...newCities }));
+    } finally {
+      setLoadingRecalculate(false);
+    }
+  };
+
   // Cost calculations
   const inventoryCost = useMemo(() => computeInventoryCost(fromInventory), [fromInventory]);
 
@@ -185,14 +266,35 @@ export function CraftInventoryClient({ locale }: Props) {
     }, 0);
   }, [craftBatch.batchState.items, craftBatch.batchState.globalSettings]);
 
-  const totalProfit = totalRevenue - inventoryCost - additionalCost + rrrValue;
+  // Calculate total crafting fees
+  const totalCraftingFees = useMemo(() => {
+    return craftBatch.batchState.items.reduce((sum, item) => {
+      const craftingFeeBase = item.craftingFeeBase ?? 0;
+      const craftingFeePerNutrition = craftBatch.batchState.globalSettings.craftingFeePerNutrition ?? 0;
+      const craftingFeePerUnit = craftingFeeBase * craftingFeePerNutrition;
+      return sum + (craftingFeePerUnit * item.quantity);
+    }, 0);
+  }, [craftBatch.batchState.items, craftBatch.batchState.globalSettings]);
+
+  const totalProfit = totalRevenue - inventoryCost - additionalCost - totalCraftingFees + rrrValue;
 
   // Build craft payload
   const buildCraftPayload = () => {
+    // Calculate total crafting fees (nutrition cost)
+    const totalCraftingFees = craftBatch.batchState.items.reduce((sum, item) => {
+      const craftingFeeBase = item.craftingFeeBase ?? 0; // nutrition required
+      const craftingFeePerNutrition = craftBatch.batchState.globalSettings.craftingFeePerNutrition ?? 0;
+      const craftingFeePerUnit = craftingFeeBase * craftingFeePerNutrition;
+      return sum + (craftingFeePerUnit * item.quantity);
+    }, 0);
+
+    // Net cost = material cost minus RRR value plus crafting fees
+    const netCost = inventoryCost + additionalCost - rrrValue + totalCraftingFees;
+
     const craftedItems = craftBatch.batchState.items.map((item) => ({
       itemId: item.itemId,
       quantity: item.quantity,
-      totalCost: (inventoryCost + additionalCost) * (item.quantity / Math.max(1, craftBatch.batchState.items.reduce((s, i) => s + i.quantity, 0))),
+      totalCost: netCost * (item.quantity / Math.max(1, craftBatch.batchState.items.reduce((s, i) => s + i.quantity, 0))),
     }));
 
     return {
@@ -228,13 +330,45 @@ export function CraftInventoryClient({ locale }: Props) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "error");
       }
+      const data = await res.json();
       await mutateInventory();
       setValidateSuccess(true);
       setShowConfirm(false);
+      setIsCraftValidated(true);
+      setCraftedItemIds(data.craftedItemIds || []);
     } catch (err) {
       setValidateError(err instanceof Error ? err.message : t("error"));
     } finally {
       setIsValidating(false);
+    }
+  };
+
+  const handleSellCraft = () => {
+    setSellError(null);
+    setShowSellModal(true);
+  };
+
+  const confirmSell = async () => {
+    setIsSelling(true);
+    setSellError(null);
+    try {
+      for (const itemId of craftedItemIds) {
+        const res = await fetch(`/api/inventory/${itemId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          throw new Error("Failed to delete item");
+        }
+      }
+      await mutateInventory();
+      setShowSellModal(false);
+      setIsCraftValidated(false);
+      setCraftedItemIds([]);
+      setValidateSuccess(false);
+    } catch (err) {
+      setSellError(err instanceof Error ? err.message : "Error deleting items");
+    } finally {
+      setIsSelling(false);
     }
   };
 
@@ -306,10 +440,11 @@ export function CraftInventoryClient({ locale }: Props) {
                       <thead>
                         <tr>
                           <th>{t("resources.material")}</th>
-                          <th className="text-right">{t("resources.stockQty")}</th>
-                          <th className="text-right">{t("resources.qtyUsed")}</th>
-                          <th className="text-right">{t("resources.pricePerUnit")}</th>
-                          <th className="text-right">Total</th>
+                          <th className="text-left">{t("resources.stockQty")}</th>
+                          <th className="text-left">{t("resources.qtyUsed")}</th>
+                          <th className="text-left">{t("resources.pricePerUnit")}</th>
+                          <th className="text-left">Total</th>
+                          <th className="text-left">Lots</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -322,16 +457,27 @@ export function CraftInventoryClient({ locale }: Props) {
                               </div>
                             </td>
                             <td className="text-right text-muted-foreground">
-                              {inventory.filter((i) => i.itemId === item.materialId).reduce((s, i) => s + i.quantity, 0).toFixed(0)}
+                              {formatQuantity(inventory.filter((i) => i.itemId === item.materialId).reduce((s, i) => s + i.quantity, 0))}
                             </td>
                             <td className="text-right font-semibold text-white">
-                              {item.quantityUsed % 1 === 0 ? item.quantityUsed : item.quantityUsed.toFixed(2)}
+                              {formatQuantity(item.quantityUsed)}
                             </td>
                             <td className="text-right text-gray-300">
                               {formatSilver(item.weightedPricePerUnit)}
                             </td>
                             <td className="text-right font-semibold text-albion-gold">
                               {formatSilver(item.quantityUsed * item.weightedPricePerUnit)}
+                            </td>
+                            <td>
+                              <LotSelector
+                                materialId={item.materialId}
+                                availableLots={inventory.filter(inv => inv.itemId === item.materialId)}
+                                selectedLots={item.lots}
+                                manualSelection={manualLotSelection[item.materialId]}
+                                onSelectionChange={(lotIds) =>
+                                  setManualLotSelection(prev => ({ ...prev, [item.materialId]: lotIds }))
+                                }
+                              />
                             </td>
                           </tr>
                         ))}
@@ -390,7 +536,7 @@ export function CraftInventoryClient({ locale }: Props) {
                               </div>
                             </td>
                             <td className="text-right font-semibold text-white">
-                              {item.quantityNeeded % 1 === 0 ? item.quantityNeeded : item.quantityNeeded.toFixed(2)}
+                              {formatQuantity(item.quantityNeeded)}
                             </td>
                             <td>
                               <Select
@@ -449,10 +595,93 @@ export function CraftInventoryClient({ locale }: Props) {
               </Card>
             )}
 
-            {/* Per-item results table */}
+            {/* Section 1: Global Results + Recalculate Button + Validation Buttons */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-albion-gold">Résumé Global</h2>
+                {toBuy.length > 0 && (
+                  <Button onClick={handleRecalculatePrices} disabled={loadingRecalculate} size="sm" variant="outline">
+                    <RefreshCw className={`h-4 w-4 mr-2 ${loadingRecalculate ? 'animate-spin' : ''}`} />
+                    {t("results.recalculate")}
+                  </Button>
+                )}
+              </div>
+
+              {/* Cost breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-xs text-muted-foreground mb-1">{t("results.inventoryCost")}</p>
+                    <p className="text-xl font-bold text-white">{formatSilver(inventoryCost)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-xs text-muted-foreground mb-1">{t("results.additionalCost")}</p>
+                    <p className="text-xl font-bold text-white">{formatSilver(additionalCost)}</p>
+                  </CardContent>
+                </Card>
+                {totalCraftingFees > 0 && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-xs text-muted-foreground mb-1">Frais de crafting</p>
+                      <p className="text-xl font-bold text-white">{formatSilver(totalCraftingFees)}</p>
+                    </CardContent>
+                  </Card>
+                )}
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-xs text-muted-foreground mb-1">{t("results.rrrReturns")}</p>
+                    <p className="text-xl font-bold text-green-400">+{formatSilver(rrrValue)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-xs text-muted-foreground mb-1">{t("results.totalRevenue")}</p>
+                    <p className="text-xl font-bold text-white">{formatSilver(totalRevenue)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-albion-gold/30 bg-albion-gold/5">
+                  <CardContent className="pt-6">
+                    <p className="text-xs text-muted-foreground mb-1">{t("results.totalProfit")}</p>
+                    <p className={`text-xl font-bold ${getProfitColor(totalProfit)}`}>
+                      {formatSilver(totalProfit)}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Validation buttons */}
+              <div className="flex items-center justify-end gap-3">
+                <Button
+                  size="lg"
+                  disabled={!session || !hasItems || isValidating || isCraftValidated}
+                  onClick={() => { setValidateError(null); setShowConfirm(true); }}
+                  className={isCraftValidated ? "bg-gray-500" : "bg-albion-gold text-albion-dark hover:bg-albion-gold/90"}
+                >
+                  {!session
+                    ? t("results.loginRequired")
+                    : isCraftValidated
+                    ? t("results.alreadyValidated")
+                    : t("results.validate")}
+                </Button>
+                {isCraftValidated && (
+                  <Button
+                    size="lg"
+                    onClick={handleSellCraft}
+                    disabled={isSelling}
+                    variant="destructive"
+                  >
+                    {t("results.sellCraft")}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Section 2: Per-Item Details */}
             <Card>
               <CardHeader>
-                <CardTitle>Résultats par item</CardTitle>
+                <CardTitle>Détails par Item</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -478,7 +707,9 @@ export function CraftInventoryClient({ locale }: Props) {
                         const netUnit = (item.customSellPrice ?? 0) * (1 - tax);
                         const itemRevenue = netUnit * item.quantity;
                         const totalItems = craftBatch.batchState.items.reduce((s, i) => s + i.quantity, 0);
-                        const itemCost = totalItems > 0 ? (inventoryCost + additionalCost) * (item.quantity / totalItems) : 0;
+                        // Net cost includes materials + crafting fees - RRR value
+                        const netTotalCost = inventoryCost + additionalCost + totalCraftingFees - rrrValue;
+                        const itemCost = totalItems > 0 ? netTotalCost * (item.quantity / totalItems) : 0;
                         const itemProfit = itemRevenue - itemCost;
                         const margin = itemRevenue > 0 ? (itemProfit / itemRevenue) * 100 : 0;
                         return (
@@ -489,7 +720,7 @@ export function CraftInventoryClient({ locale }: Props) {
                                 <span className="text-sm text-white">{materialNames[item.itemId] ?? item.itemId}</span>
                               </div>
                             </td>
-                            <td className="text-right">{item.quantity}</td>
+                            <td className="text-right">{formatQuantity(item.quantity)}</td>
                             <td className="text-right text-gray-300">{formatSilver(netUnit)}</td>
                             <td className="text-right text-gray-300">{formatSilver(itemRevenue)}</td>
                             <td className="text-right text-gray-300">{formatSilver(itemCost)}</td>
@@ -508,63 +739,82 @@ export function CraftInventoryClient({ locale }: Props) {
               </CardContent>
             </Card>
 
-            {/* Cost breakdown */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Section 3: Materials Summary */}
+            {effectiveMaterials.length > 0 && (
               <Card>
-                <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground mb-1">{t("results.inventoryCost")}</p>
-                  <p className="text-xl font-bold text-white">{formatSilver(inventoryCost)}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground mb-1">{t("results.additionalCost")}</p>
-                  <p className="text-xl font-bold text-white">{formatSilver(additionalCost)}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground mb-1">{t("results.rrrReturns")}</p>
-                  <p className="text-xl font-bold text-green-400">+{formatSilver(rrrValue)}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-xs text-muted-foreground mb-1">{t("results.totalRevenue")}</p>
-                  <p className="text-xl font-bold text-white">{formatSilver(totalRevenue)}</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Total profit */}
-            <Card className="border-albion-gold/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{t("results.totalProfit")}</p>
-                    <p className={`text-3xl font-bold mt-1 ${getProfitColor(totalProfit)}`}>
-                      {formatSilver(totalProfit)}
-                    </p>
+                <CardHeader>
+                  <CardTitle>Résumé par Ressource</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="albion-table">
+                      <thead>
+                        <tr>
+                          <th>{t("resources.material")}</th>
+                          <th className="text-right">{t("results.rawQty")}</th>
+                          <th className="text-right">{t("results.rrrQty")}</th>
+                          <th className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                              {t("results.fromInventory")}
+                            </div>
+                          </th>
+                          <th className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
+                              {t("results.toBuyQty")}
+                            </div>
+                          </th>
+                          <th className="text-right">{t("results.totalCostMat")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {effectiveMaterials.map((mat) => {
+                          const invItem = fromInventory.find(f => f.materialId === mat.materialId);
+                          const buyItem = toBuy.find(b => b.materialId === mat.materialId);
+                          const invQty = invItem?.quantityUsed ?? 0;
+                          const buyQty = buyItem?.quantityNeeded ?? 0;
+                          const invCost = invQty * (invItem?.weightedPricePerUnit ?? 0);
+                          const buyCost = buyQty * (toBuyPrices[mat.materialId] ?? 0);
+                          const totalCost = invCost + buyCost;
+                          return (
+                            <tr key={mat.materialId}>
+                              <td>
+                                <div className="flex items-center gap-2">
+                                  <ItemIcon item={mat.materialId} size={28} showTooltip={false} showLoading={false} />
+                                  <span className="text-sm">{materialNames[mat.materialId] ?? mat.materialId}</span>
+                                </div>
+                              </td>
+                              <td className="text-right text-muted-foreground">
+                                {formatQuantity(mat.rawQuantity)}
+                              </td>
+                              <td className="text-right text-white">
+                                {formatQuantity(mat.effectiveQuantity)}
+                              </td>
+                              <td className="text-right text-green-400">
+                                {formatQuantity(invQty)}
+                              </td>
+                              <td className="text-right text-yellow-400">
+                                {formatQuantity(buyQty)}
+                              </td>
+                              <td className="text-right font-semibold text-albion-gold">
+                                {formatSilver(totalCost)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
-                  <Button
-                    size="lg"
-                    disabled={!session || !hasItems || isValidating}
-                    onClick={() => { setValidateError(null); setShowConfirm(true); }}
-                    className="bg-albion-gold text-albion-dark hover:bg-albion-gold/90"
-                  >
-                    {!session
-                      ? t("results.loginRequired")
-                      : t("results.validate")}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* RRR breakdown */}
+            {/* RRR Returns Breakdown */}
             {rrrReturns.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">{t("results.rrrReturns")}</CardTitle>
+                  <CardTitle className="text-sm">Retours RRR</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -578,7 +828,7 @@ export function CraftInventoryClient({ locale }: Props) {
                           </Badge>
                         </div>
                         <span className="text-green-400 font-medium">
-                          +{r.quantity.toFixed(2)} ({formatSilver(r.quantity * r.pricePerUnit)})
+                          +{formatQuantity(r.quantity)} ({formatSilver(r.quantity * r.pricePerUnit)})
                         </span>
                       </div>
                     ))}
@@ -611,7 +861,7 @@ export function CraftInventoryClient({ locale }: Props) {
                         <span>{materialNames[item.materialId] ?? item.materialId}</span>
                       </div>
                       <span className="text-red-400">
-                        -{item.quantityUsed.toFixed(2)} ({formatSilver(item.quantityUsed * item.weightedPricePerUnit)})
+                        -{formatQuantity(item.quantityUsed)} ({formatSilver(item.quantityUsed * item.weightedPricePerUnit)})
                       </span>
                     </div>
                   ))}
@@ -632,7 +882,7 @@ export function CraftInventoryClient({ locale }: Props) {
                         <span>{materialNames[item.materialId] ?? item.materialId}</span>
                       </div>
                       <span className="text-gray-300">
-                        {item.quantityNeeded.toFixed(2)} × {formatSilver(toBuyPrices[item.materialId] ?? 0)}
+                        {formatQuantity(item.quantityNeeded)} × {formatSilver(toBuyPrices[item.materialId] ?? 0)}
                       </span>
                     </div>
                   ))}
@@ -650,9 +900,9 @@ export function CraftInventoryClient({ locale }: Props) {
                     <div key={item.id} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
                         <ItemIcon item={item.itemId} size={20} showTooltip={false} showLoading={false} />
-                        <span>{item.itemId}</span>
+                        <span>{materialNames[item.itemId] ?? item.itemId}</span>
                       </div>
-                      <span className="text-green-400">+{item.quantity}</span>
+                      <span className="text-green-400">+{formatQuantity(item.quantity)}</span>
                     </div>
                   ))}
                 </div>
@@ -671,7 +921,7 @@ export function CraftInventoryClient({ locale }: Props) {
                         <ItemIcon item={r.materialId} size={20} showTooltip={false} showLoading={false} />
                         <span>{materialNames[r.materialId] ?? r.materialId}</span>
                       </div>
-                      <span className="text-green-400">+{r.quantity.toFixed(2)}</span>
+                      <span className="text-green-400">+{formatQuantity(r.quantity)}</span>
                     </div>
                   ))}
                 </div>
@@ -699,6 +949,69 @@ export function CraftInventoryClient({ locale }: Props) {
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("confirmModal.confirming")}</>
               ) : (
                 t("confirmModal.confirm")
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sell Modal */}
+      <Dialog open={showSellModal} onOpenChange={setShowSellModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("sellModal.title")}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">{t("sellModal.explanation")}</p>
+
+            <Card className="border-yellow-500/40 bg-yellow-950/10">
+              <CardContent className="py-3 flex items-center gap-2 text-yellow-400 text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{t("sellModal.noMoneyTracking")}</span>
+              </CardContent>
+            </Card>
+
+            {craftBatch.batchState.items.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                  {t("sellModal.itemsToRemove")}
+                </p>
+                <div className="space-y-1">
+                  {craftBatch.batchState.items.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <ItemIcon item={item.itemId} size={20} showTooltip={false} showLoading={false} />
+                        <span>{materialNames[item.itemId] ?? item.itemId}</span>
+                      </div>
+                      <span className="text-red-400">-{formatQuantity(item.quantity)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {sellError && (
+            <div className="flex items-center gap-2 text-destructive text-sm mt-2">
+              <AlertCircle className="h-4 w-4" />
+              <span>{sellError}</span>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSellModal(false)}>
+              {t("sellModal.cancel")}
+            </Button>
+            <Button
+              onClick={confirmSell}
+              disabled={isSelling}
+              variant="destructive"
+            >
+              {isSelling ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("sellModal.selling")}</>
+              ) : (
+                t("sellModal.confirm")
               )}
             </Button>
           </DialogFooter>

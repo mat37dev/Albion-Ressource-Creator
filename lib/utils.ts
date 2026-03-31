@@ -30,3 +30,10 @@ export function getProfitBadgeVariant(profit: number): "success" | "destructive"
   if (profit < 0) return "destructive";
   return "secondary";
 }
+
+/**
+ * Format a quantity value, removing unnecessary decimals for integers
+ */
+export function formatQuantity(value: number): string {
+  return value % 1 === 0 ? value.toString() : value.toFixed(2);
+}

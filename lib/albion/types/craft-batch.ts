@@ -29,9 +29,8 @@ export interface CraftBatchState {
   items: CraftBatchItem[];
   materials: Record<string, MaterialRequirement>;
   globalSettings: {
-    useFocus: boolean;
     isPremium: boolean; // Compte Premium (taxes réduites)
-    craftingFeePerNutrition: number; // Prix par nutrition à la station (en silver)
+    craftingFeePerNutrition: number; // Prix pour 100 nutritions à la station (en silver)
   };
   journals?: {
     use: boolean;

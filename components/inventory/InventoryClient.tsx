@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { useInventory } from "@/lib/hooks/useInventory";
-import { useAlbionItems } from "@/lib/hooks/useAlbionItems";
+import { getItemNames } from "@/lib/utils/item-names";
 import { ItemIcon } from "@/components/ui/item-icon";
-import { ItemSelector } from "@/components/shared/ItemSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,9 +19,9 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, Pencil, Check, X, Hammer } from "lucide-react";
-import { formatSilver } from "@/lib/utils";
-import type { AlbionItem } from "@/lib/db/schema";
+import { Loader2, Plus, Trash2, Hammer, AlertCircle } from "lucide-react";
+import { formatSilver, formatQuantity } from "@/lib/utils";
+import type { InventoryItem } from "@/lib/db/schema";
 
 interface Props {
   locale: string;
@@ -37,79 +36,71 @@ export function InventoryClient({ locale }: Props) {
   const { inventory, isLoading, error, mutate } = useInventory();
 
   // Item names lookup
-  const itemIds = useMemo(() => [...new Set(inventory.map((i) => i.itemId))], [inventory]);
-  const { items: dbItems } = useAlbionItems({ limit: 5000 });
-  const itemNames = useMemo(
-    () => Object.fromEntries(dbItems.map((item) => [item.id, localeCode === "fr" ? item.nameFR : item.nameEN])),
-    [dbItems, localeCode]
-  );
+  const [itemNames, setItemNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const itemIds = [...new Set(inventory.map((i) => i.itemId))];
+    if (itemIds.length > 0) {
+      getItemNames(itemIds, localeCode).then(setItemNames);
+    }
+  }, [inventory, localeCode]);
 
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
-
-  // Add modal state
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addStep, setAddStep] = useState<"select" | "details">("select");
-  const [selectedItem, setSelectedItem] = useState<AlbionItem | null>(null);
-  const [addQty, setAddQty] = useState("1");
-  const [addPrice, setAddPrice] = useState("0");
-  const [addSource, setAddSource] = useState<"bought" | "crafted" | "rrr_return">("bought");
-  const [addNotes, setAddNotes] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
 
   // Delete confirmation state
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
-  // Inline edit state
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editQty, setEditQty] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  // Edit modal state
+  const [editModal, setEditModal] = useState<{
+    item: InventoryItem;
+    quantity: string;
+    pricePerUnit: string;
+    notes: string;
+  } | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     if (sourceFilter === "all") return inventory;
     return inventory.filter((i) => i.source === sourceFilter);
   }, [inventory, sourceFilter]);
 
-  const handleOpenAdd = () => {
-    setSelectedItem(null);
-    setAddStep("select");
-    setAddQty("1");
-    setAddPrice("0");
-    setAddSource("bought");
-    setAddNotes("");
-    setAddError(null);
-    setShowAddModal(true);
+  const openEditModal = (item: InventoryItem) => {
+    setEditModal({
+      item,
+      quantity: String(item.quantity),
+      pricePerUnit: String(item.pricePerUnit),
+      notes: item.notes ?? "",
+    });
+    setEditError(null);
   };
 
-  const handleItemSelect = (item: AlbionItem) => {
-    setSelectedItem(item);
-    setAddStep("details");
-  };
+  const handleSaveEdit = async () => {
+    if (!editModal) return;
+    setIsSavingEdit(true);
+    setEditError(null);
 
-  const handleAdd = async () => {
-    if (!selectedItem) return;
-    setIsAdding(true);
-    setAddError(null);
     try {
-      const res = await fetch("/api/inventory", {
-        method: "POST",
+      const res = await fetch(`/api/inventory/${editModal.item.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          itemId: selectedItem.id,
-          quantity: Number(addQty),
-          pricePerUnit: Number(addPrice),
-          source: addSource,
-          notes: addNotes || null,
+          quantity: Number(editModal.quantity),
+          pricePerUnit: Number(editModal.pricePerUnit),
+          notes: editModal.notes || null,
         }),
       });
-      if (!res.ok) throw new Error("add_failed");
+
+      if (!res.ok) throw new Error("edit_failed");
       await mutate();
-      setShowAddModal(false);
+      setEditModal(null);
     } catch {
-      setAddError(t("errors.addFailed"));
+      setEditError(t("errors.updateFailed"));
     } finally {
-      setIsAdding(false);
+      setIsSavingEdit(false);
     }
   };
 
@@ -125,23 +116,19 @@ export function InventoryClient({ locale }: Props) {
     }
   };
 
-  const startEdit = (id: string, qty: number) => {
-    setEditId(id);
-    setEditQty(String(qty));
-  };
-
-  const handleSaveEdit = async (id: string) => {
-    setIsSaving(true);
+  const handleDeleteAll = async () => {
+    setIsDeletingAll(true);
     try {
-      await fetch(`/api/inventory/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: Number(editQty) }),
-      });
+      // Delete all items one by one
+      for (const item of inventory) {
+        await fetch(`/api/inventory/${item.id}`, { method: "DELETE" });
+      }
       await mutate();
-      setEditId(null);
+      setShowDeleteAllConfirm(false);
+    } catch {
+      // silent fail
     } finally {
-      setIsSaving(false);
+      setIsDeletingAll(false);
     }
   };
 
@@ -166,9 +153,11 @@ export function InventoryClient({ locale }: Props) {
               {t("craftFromInventory")}
             </Link>
           </Button>
-          <Button size="sm" onClick={handleOpenAdd}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t("addItem")}
+          <Button asChild size="sm">
+            <Link href={`/${locale}/inventory/add`}>
+              <Plus className="h-4 w-4 mr-2" />
+              {t("addItem")}
+            </Link>
           </Button>
         </div>
       </div>
@@ -212,12 +201,28 @@ export function InventoryClient({ locale }: Props) {
                   <th>{t("columns.total")}</th>
                   <th>{t("columns.source")}</th>
                   <th>{t("columns.date")}</th>
-                  <th></th>
+                  <th>
+                    {filtered.length > 0 && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive/70 hover:text-destructive"
+                        onClick={() => setShowDeleteAllConfirm(true)}
+                        title="Tout supprimer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((row) => (
-                  <tr key={row.id}>
+                  <tr
+                    key={row.id}
+                    className="cursor-pointer hover:bg-secondary/20 transition-colors"
+                    onClick={() => openEditModal(row)}
+                  >
                     <td>
                       <div className="flex items-center gap-2">
                         <ItemIcon item={row.itemId} size={28} showTooltip={false} showLoading={false} />
@@ -227,43 +232,7 @@ export function InventoryClient({ locale }: Props) {
                       </div>
                     </td>
                     <td>
-                      {editId === row.id ? (
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            value={editQty}
-                            onChange={(e) => setEditQty(e.target.value)}
-                            className="w-20 h-7 text-xs"
-                            min="0.01"
-                            step="0.01"
-                          />
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            disabled={isSaving}
-                            onClick={() => handleSaveEdit(row.id)}
-                          >
-                            <Check className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={() => setEditId(null)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div
-                          className="flex items-center gap-1 cursor-pointer group"
-                          onClick={() => startEdit(row.id, row.quantity)}
-                        >
-                          <span>{row.quantity % 1 === 0 ? row.quantity : row.quantity.toFixed(2)}</span>
-                          <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
-                        </div>
-                      )}
+                      <span>{formatQuantity(row.quantity)}</span>
                     </td>
                     <td className="text-gray-300">{formatSilver(row.pricePerUnit)}</td>
                     <td className="text-gray-300">{formatSilver(row.quantity * row.pricePerUnit)}</td>
@@ -275,7 +244,7 @@ export function InventoryClient({ locale }: Props) {
                     <td className="text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(row.createdAt).toLocaleDateString(localeCode === "fr" ? "fr-FR" : "en-US")}
                     </td>
-                    <td>
+                    <td onClick={(e) => e.stopPropagation()}>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -293,108 +262,72 @@ export function InventoryClient({ locale }: Props) {
         )}
       </Card>
 
-      {/* Add Modal */}
-      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className={addStep === "select" ? "max-w-4xl" : "max-w-md"}>
+      {/* Edit Modal */}
+      <Dialog open={!!editModal} onOpenChange={(open) => !open && setEditModal(null)}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("addModal.title")}</DialogTitle>
+            <DialogTitle>{t("editModal.title")}</DialogTitle>
           </DialogHeader>
 
-          {addStep === "select" ? (
-            <ItemSelector
-              onItemSelect={handleItemSelect}
-              showAddButton={true}
-              limit={2000}
-            />
-          ) : (
+          {editModal && (
             <div className="space-y-4">
-              {selectedItem && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border border-border">
-                  <ItemIcon item={selectedItem.id} size={36} />
-                  <div>
-                    <div className="font-medium text-white">
-                      {localeCode === "fr" ? selectedItem.nameFR : selectedItem.nameEN}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{selectedItem.id}</div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="ml-auto text-xs"
-                    onClick={() => setAddStep("select")}
-                  >
-                    Changer
-                  </Button>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label htmlFor="add-qty">{t("addModal.quantity")}</Label>
-                  <Input
-                    id="add-qty"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={addQty}
-                    onChange={(e) => setAddQty(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="add-price">{t("addModal.pricePerUnit")}</Label>
-                  <Input
-                    id="add-price"
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={addPrice}
-                    onChange={(e) => setAddPrice(e.target.value)}
-                  />
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border">
+                <ItemIcon item={editModal.item.itemId} size={36} />
+                <div className="font-medium text-white">
+                  {itemNames[editModal.item.itemId] ?? editModal.item.itemId}
                 </div>
               </div>
 
               <div className="space-y-1">
-                <Label>{t("addModal.source")}</Label>
-                <Select value={addSource} onValueChange={(v) => setAddSource(v as typeof addSource)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bought">{t("sources.bought")}</SelectItem>
-                    <SelectItem value="crafted">{t("sources.crafted")}</SelectItem>
-                    <SelectItem value="rrr_return">{t("sources.rrr_return")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="add-notes">{t("addModal.notes")}</Label>
+                <Label htmlFor="edit-qty">{t("editModal.quantity")}</Label>
                 <Input
-                  id="add-notes"
-                  value={addNotes}
-                  onChange={(e) => setAddNotes(e.target.value)}
+                  id="edit-qty"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={editModal.quantity}
+                  onChange={(e) => setEditModal({ ...editModal, quantity: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="edit-price">{t("editModal.pricePerUnit")}</Label>
+                <Input
+                  id="edit-price"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={editModal.pricePerUnit}
+                  onChange={(e) => setEditModal({ ...editModal, pricePerUnit: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="edit-notes">{t("editModal.notes")}</Label>
+                <Input
+                  id="edit-notes"
+                  value={editModal.notes}
+                  onChange={(e) => setEditModal({ ...editModal, notes: e.target.value })}
                   placeholder="..."
                 />
               </div>
 
-              {addError && (
-                <p className="text-destructive text-sm">{addError}</p>
-              )}
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowAddModal(false)}>
-                  {t("addModal.cancel")}
-                </Button>
-                <Button onClick={handleAdd} disabled={isAdding || !selectedItem}>
-                  {isAdding ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("addModal.adding")}</>
-                  ) : (
-                    t("addModal.confirm")
-                  )}
-                </Button>
-              </DialogFooter>
+              {editError && <p className="text-destructive text-sm">{editError}</p>}
             </div>
           )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditModal(null)}>
+              {t("editModal.cancel")}
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={isSavingEdit}>
+              {isSavingEdit ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("editModal.saving")}</>
+              ) : (
+                t("editModal.save")
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -413,6 +346,38 @@ export function InventoryClient({ locale }: Props) {
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("deleting")}</>
               ) : (
                 t("deleteConfirmBtn")
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete All Confirmation Modal */}
+      <Dialog open={showDeleteAllConfirm} onOpenChange={setShowDeleteAllConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer tout l'inventaire ?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Cette action supprimera tous les {inventory.length} items de votre inventaire. Cette action est irréversible.
+            </p>
+            <Card className="border-destructive/40 bg-destructive/10">
+              <CardContent className="py-3 flex items-center gap-2 text-destructive text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>Attention : Cette action ne peut pas être annulée</span>
+              </CardContent>
+            </Card>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteAllConfirm(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteAll} disabled={isDeletingAll}>
+              {isDeletingAll ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Suppression...</>
+              ) : (
+                <>Tout supprimer</>
               )}
             </Button>
           </DialogFooter>

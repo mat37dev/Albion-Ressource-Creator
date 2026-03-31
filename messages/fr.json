@@ -246,6 +246,15 @@
     "deleting": "Suppression...",
     "editQuantity": "Modifier la quantité",
     "saving": "Enregistrement...",
+    "editModal": {
+      "title": "Modifier l'item",
+      "quantity": "Quantité",
+      "pricePerUnit": "Prix par unité (silver)",
+      "notes": "Notes (optionnel)",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "saving": "Enregistrement..."
+    },
     "errors": {
       "loadFailed": "Erreur lors du chargement de l'inventaire",
       "addFailed": "Erreur lors de l'ajout",
@@ -285,7 +294,17 @@
       "totalProfit": "Profit net total",
       "validate": "Valider le craft",
       "validating": "Validation...",
-      "loginRequired": "Connectez-vous pour valider"
+      "loginRequired": "Connectez-vous pour valider",
+      "recalculate": "Recalculer les prix",
+      "alreadyValidated": "Déjà validé",
+      "sellCraft": "Vendre Craft",
+      "materialsSummary": "Résumé des matériaux",
+      "rawQty": "Qté brute",
+      "rrrQty": "Qté RRR",
+      "fromInventory": "Depuis inventaire",
+      "toBuyQty": "À acheter",
+      "avgPrice": "Prix moyen",
+      "totalCostMat": "Coût total"
     },
     "confirmModal": {
       "title": "Confirmer le craft",
@@ -298,7 +317,16 @@
       "confirming": "En cours..."
     },
     "success": "Craft validé ! Inventaire mis à jour.",
-    "error": "Erreur lors de la validation du craft"
+    "error": "Erreur lors de la validation du craft",
+    "sellModal": {
+      "title": "Confirmer la vente",
+      "explanation": "Cette action supprimera les items craftés de votre inventaire virtuel.",
+      "noMoneyTracking": "Note : Le suivi monétaire n'est pas encore implémenté.",
+      "itemsToRemove": "Items à supprimer",
+      "cancel": "Annuler",
+      "confirm": "Confirmer la vente",
+      "selling": "Vente en cours..."
+    }
   },
   "footer": {
     "disclaimer": "Ce site n'est pas affilié avec Sandbox Interactive ou Albion Online.",
@@ -404,7 +432,6 @@
         "buyCity": "Ville d'achat",
         "buyType": "Type d'achat",
         "loadPrices": "Charger les prix",
-        "useFocus": "Utiliser le focus",
         "specialization": "Spécialisation",
         "noResources": "Ajoutez des items pour voir les ressources nécessaires"
       },

@@ -116,7 +116,7 @@ export const inventoryItems = pgTable("inventory_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   itemId: text("item_id").notNull(),
-  quantity: real("quantity").notNull(),
+  quantity: integer("quantity").notNull(),
   pricePerUnit: real("price_per_unit").notNull(),
   source: text("source").notNull(), // 'bought' | 'crafted' | 'rrr_return'
   notes: text("notes"),

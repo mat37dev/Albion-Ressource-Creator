@@ -46,7 +46,6 @@ export function useCraftBatch() {
     items: [],
     materials: {},
     globalSettings: {
-      useFocus: false,
       isPremium: false,
       craftingFeePerNutrition: 0,
     },

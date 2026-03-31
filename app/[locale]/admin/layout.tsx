@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Users, Package, Shield } from "lucide-react";
+import React from "react";
 
 interface Props {
   children: React.ReactNode;

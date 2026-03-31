@@ -43,38 +43,38 @@ La page craft existante (`/craft`) n'est **pas modifiée**.
 
 ---
 
-### Phase 1 — Infrastructure DB & API
+### Phase 1 — Infrastructure DB & API ✅ TERMINÉE
 **Objectif :** tables, routes API, hooks React
 
-- [ ] Ajouter `inventoryItems` à `lib/db/schema.ts`
-- [ ] Exporter les types `InventoryItem`, `NewInventoryItem`
-- [ ] Mettre à jour `drizzle.config.ts` (ajouter `inventory_items` au `tablesFilter`)
-- [ ] Créer `app/api/inventory/route.ts` — GET (liste) + POST (ajout)
-- [ ] Créer `app/api/inventory/[id]/route.ts` — PATCH (quantité/prix) + DELETE
-- [ ] Créer `lib/hooks/useInventory.ts` — hook SWR avec mutate
-- [ ] Pousser la migration DB (`npm run db:push`)
+- [x] Ajouter `inventoryItems` à `lib/db/schema.ts`
+- [x] Exporter les types `InventoryItem`, `NewInventoryItem`
+- [x] Mettre à jour `drizzle.config.ts` (ajouter `inventory_items` au `tablesFilter`)
+- [x] Créer `app/api/inventory/route.ts` — GET (liste) + POST (ajout)
+- [x] Créer `app/api/inventory/[id]/route.ts` — PATCH (quantité/prix) + DELETE
+- [x] Créer `lib/hooks/useInventory.ts` — hook SWR avec mutate
+- [x] Pousser la migration DB (`npm run db:push`)
 
 ---
 
-### Phase 2 — UI Inventaire (profil / page dédiée)
+### Phase 2 — UI Inventaire (profil / page dédiée) ✅ TERMINÉE
 **Objectif :** l'utilisateur peut consulter, ajouter et supprimer ses items
 
-- [ ] Créer `app/[locale]/inventory/page.tsx`
-- [ ] Créer `components/inventory/InventoryClient.tsx`
+- [x] Créer `app/[locale]/inventory/page.tsx`
+- [x] Créer `components/inventory/InventoryClient.tsx`
   - Tableau des items (icône, nom, quantité, prix/unité, total, source, date)
   - Bouton "Ajouter" → modal de sélection d'item + saisie quantité + prix
   - Bouton "Supprimer" par ligne (avec confirmation)
   - Bouton "Modifier quantité" inline
   - Filtre par catégorie
-- [ ] Ajouter lien "Inventaire" dans `Header.tsx` (nav desktop + mobile)
-- [ ] Ajouter bouton "Inventaire" sur la page profil (`/profile`)
-- [ ] Ajouter bouton "Craft depuis l'inventaire" dans `InventoryClient` → lien vers `/craft-inventory`
-- [ ] Traductions `fr.json` / `en.json` — clé `inventory.*`
-- [ ] Protéger la route (redirect vers login si non connecté)
+- [x] Ajouter lien "Inventaire" dans `Header.tsx` (nav desktop + mobile)
+- [ ] Ajouter bouton "Inventaire" sur la page profil (`/profile`) *(optionnel)*
+- [x] Ajouter bouton "Craft depuis l'inventaire" dans `InventoryClient` → lien vers `/craft-inventory`
+- [x] Traductions `fr.json` / `en.json` — clé `inventory.*`
+- [x] Protéger la route (redirect vers login si non connecté)
 
 ---
 
-### Phase 3 — Page Craft Inventaire
+### Phase 3 — Page Craft Inventaire ✅ TERMINÉE
 **Objectif :** nouvelle page de craft qui exploite l'inventaire
 
 Structure de la page :
@@ -91,21 +91,21 @@ Structure de la page :
     └── [Bouton "Valider le craft"]
 ```
 
-- [ ] Créer `app/[locale]/craft-inventory/page.tsx`
-- [ ] Créer `components/craft-inventory/CraftInventoryClient.tsx`
-- [ ] Créer `lib/albion/utils/inventory-craft.ts`
+- [x] Créer `app/[locale]/craft-inventory/page.tsx`
+- [x] Créer `components/craft-inventory/CraftInventoryClient.tsx`
+- [x] Créer `lib/albion/utils/inventory-craft.ts`
   - `splitMaterialNeeds(materials, inventory)` → `{ fromInventory, toBuy }`
   - `computeInventoryCost(fromInventory)` → coût réel
   - `computeRRRReturns(materials, rrr, fromInventory, toBuy)` → retours par source
-- [ ] Afficher Tableau A (inventaire) — prix non modifiable, quantité limitée au stock
-- [ ] Afficher Tableau B (compléments) — prix marché modifiable
-- [ ] Section résultats avec les deux colonnes de coût
-- [ ] Bouton "Valider le craft" (disabled si non connecté)
-- [ ] Traductions `fr.json` / `en.json` — clé `craftInventory.*`
+- [x] Afficher Tableau A (inventaire) — prix non modifiable, quantité limitée au stock
+- [x] Afficher Tableau B (compléments) — prix marché modifiable
+- [x] Section résultats avec les deux colonnes de coût
+- [x] Bouton "Valider le craft" (disabled si non connecté)
+- [x] Traductions `fr.json` / `en.json` — clé `craftInventory.*`
 
 ---
 
-### Phase 4 — Validation du craft & mise à jour inventaire
+### Phase 4 — Validation du craft & mise à jour inventaire ✅ TERMINÉE
 **Objectif :** le bouton "Valider" applique les changements à l'inventaire
 
 Logique de validation :
@@ -116,13 +116,13 @@ Logique de validation :
    - Retour depuis achats → `source: 'rrr_return'`, `pricePerUnit` = prix marché utilisé
 4. Afficher un résumé de ce qui a changé (modal de confirmation avant d'appliquer)
 
-- [ ] Créer `app/api/inventory/craft/route.ts` — POST avec payload complet
+- [x] Créer `app/api/inventory/craft/route.ts` — POST avec payload complet
   - Valide que l'utilisateur possède bien les ressources nécessaires (double-check serveur)
   - Applique toutes les mutations dans une transaction DB
-- [ ] Connecter le bouton "Valider" au endpoint
-- [ ] Afficher modal de confirmation avec résumé avant envoi
-- [ ] Afficher notification succès / erreur après validation
-- [ ] Revalider le cache SWR de l'inventaire après succès
+- [x] Connecter le bouton "Valider" au endpoint
+- [x] Afficher modal de confirmation avec résumé avant envoi
+- [x] Afficher notification succès / erreur après validation
+- [x] Revalider le cache SWR de l'inventaire après succès
 
 ---
 

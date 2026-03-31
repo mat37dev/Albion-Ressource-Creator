@@ -216,23 +216,6 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
               Compte Premium (taxes réduites : 4% vente directe, 6.5% ordre de vente)
             </Label>
           </div>
-
-          {/* Use Focus */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="useFocus"
-              checked={craftBatch.batchState.globalSettings.useFocus}
-              onCheckedChange={(checked) =>
-                craftBatch.updateGlobalSettings({ useFocus: checked as boolean })
-              }
-            />
-            <Label
-              htmlFor="useFocus"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-            >
-              Utiliser le focus pour améliorer le RRR (Resource Return Rate)
-            </Label>
-          </div>
         </CardContent>
       </Card>
 

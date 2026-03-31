@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { inventoryItems } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
+import { addOrMergeInventoryItem } from "@/lib/db/inventory-helpers";
 
 interface CraftPayload {
   fromInventory: Array<{ lotId: string; quantityUsed: number }>;
@@ -56,6 +57,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Execute all mutations in a transaction
+  const craftedItemIds: string[] = [];
+
   await db.transaction(async (tx) => {
     // 1. Reduce / delete consumed inventory lots
     for (const consume of fromInventory) {
@@ -71,31 +74,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Insert crafted items
+    // 2. Insert or merge crafted items
     for (const crafted of craftedItems) {
       if (crafted.quantity <= 0) continue;
       const pricePerUnit = crafted.quantity > 0 ? crafted.totalCost / crafted.quantity : 0;
-      await tx.insert(inventoryItems).values({
+      const itemId = await addOrMergeInventoryItem(tx, {
         userId: session.user.id,
         itemId: crafted.itemId,
         quantity: crafted.quantity,
         pricePerUnit,
         source: "crafted",
+        notes: null,
       });
+      craftedItemIds.push(itemId);
     }
 
-    // 3. Insert RRR return rows
+    // 3. Insert or merge RRR return rows
     for (const rrr of rrrReturns) {
       if (rrr.quantity <= 0.0001) continue;
-      await tx.insert(inventoryItems).values({
+
+      const quantityToAdd = Math.floor(rrr.quantity);
+
+      await addOrMergeInventoryItem(tx, {
         userId: session.user.id,
         itemId: rrr.itemId,
-        quantity: rrr.quantity,
+        quantity: quantityToAdd,
         pricePerUnit: rrr.pricePerUnit,
         source: "rrr_return",
+        notes: null,
       });
     }
   });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, craftedItemIds });
 }

@@ -2,11 +2,13 @@ import { isRRRExempt } from "./rrr";
 import type { InventoryItem } from "@/lib/db/schema";
 
 /**
- * Represents a material needed for crafting, with RRR already applied
+ * Represents a material needed for crafting
  */
 export interface CraftMaterial {
   materialId: string;
-  /** Effective quantity needed (after RRR) */
+  /** Raw quantity needed (before RRR) - used for cost calculation */
+  rawQuantity: number;
+  /** Effective quantity needed (after RRR) - used for inventory consumption */
   effectiveQuantity: number;
 }
 
@@ -27,8 +29,10 @@ export interface FromInventoryItem {
   materialId: string;
   /** Total quantity this material contributes from inventory */
   quantityUsed: number;
-  /** Weighted average price per unit across consumed lots */
+  /** Weighted average price per unit across consumed lots (adjusted for RRR for cost calculation) */
   weightedPricePerUnit: number;
+  /** Original weighted price (not adjusted by RRR, used for RRR returns valuation) */
+  originalWeightedPrice: number;
   /** Individual lot consumptions (for the FIFO validation payload) */
   lots: ConsumedLot[];
 }
@@ -43,19 +47,33 @@ export interface ToBuyItem {
 /**
  * Splits material requirements between inventory stock and additional purchases.
  * Consumes inventory lots in FIFO order (earliest createdAt first).
+ * Uses effectiveQuantity for physical consumption, but adjusts cost to reflect rawQuantity.
+ * @param manualSelection Optional manual lot selection override (key: materialId, value: ordered lotIds)
  */
 export function splitMaterialNeeds(
   materials: CraftMaterial[],
-  inventory: InventoryItem[]
+  inventory: InventoryItem[],
+  manualSelection?: Record<string, string[]>
 ): { fromInventory: FromInventoryItem[]; toBuy: ToBuyItem[] } {
   const fromInventory: FromInventoryItem[] = [];
   const toBuy: ToBuyItem[] = [];
 
   for (const mat of materials) {
-    // Get all inventory lots for this material, sorted FIFO (already sorted by createdAt ASC from API)
-    const lots = inventory.filter((inv) => inv.itemId === mat.materialId);
+    // Get all inventory lots for this material
+    let lots = inventory.filter((inv) => inv.itemId === mat.materialId);
 
-    let remaining = mat.effectiveQuantity;
+    // Apply manual selection if provided for this material
+    if (manualSelection?.[mat.materialId]) {
+      const selectedLotIds = manualSelection[mat.materialId];
+      lots = selectedLotIds
+        .map(id => lots.find(l => l.id === id))
+        .filter((l): l is InventoryItem => l !== undefined);
+    }
+    // Otherwise: use default FIFO (already sorted by createdAt ASC from API)
+
+    // Consume according to rawQuantity (what we actually put in the craft)
+    // The RRR will be returned separately
+    let remaining = mat.rawQuantity;
     const consumedLots: ConsumedLot[] = [];
     let totalCostFromInventory = 0;
 
@@ -72,13 +90,15 @@ export function splitMaterialNeeds(
       remaining -= consume;
     }
 
-    const quantityUsed = mat.effectiveQuantity - remaining;
+    const quantityUsed = mat.rawQuantity - remaining;
     if (quantityUsed > 0) {
-      const weightedPrice = quantityUsed > 0 ? totalCostFromInventory / quantityUsed : 0;
+      const originalWeightedPrice = quantityUsed > 0 ? totalCostFromInventory / quantityUsed : 0;
+
       fromInventory.push({
         materialId: mat.materialId,
         quantityUsed,
-        weightedPricePerUnit: weightedPrice,
+        weightedPricePerUnit: originalWeightedPrice,
+        originalWeightedPrice,
         lots: consumedLots,
       });
     }
@@ -87,7 +107,7 @@ export function splitMaterialNeeds(
       toBuy.push({
         materialId: mat.materialId,
         quantityNeeded: remaining,
-        pricePerUnit: 0,
+        pricePerUnit: 0, // Will be set by user
       });
     }
   }
@@ -145,7 +165,7 @@ export function computeRRRReturns(
         returns.push({
           materialId: mat.materialId,
           quantity: rrrTotal * invRatio,
-          pricePerUnit: invItem.weightedPricePerUnit,
+          pricePerUnit: invItem.originalWeightedPrice, // Use original price, not adjusted
           source: "inventory",
         });
       }

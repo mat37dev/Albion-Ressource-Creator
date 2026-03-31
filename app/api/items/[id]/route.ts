@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { albionItems } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -6,7 +6,6 @@ import { eq } from 'drizzle-orm';
 export const revalidate = 3600; // Cache 1 heure
 
 export async function GET(
-  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

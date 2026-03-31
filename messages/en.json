@@ -246,6 +246,15 @@
     "deleting": "Deleting...",
     "editQuantity": "Edit quantity",
     "saving": "Saving...",
+    "editModal": {
+      "title": "Edit Item",
+      "quantity": "Quantity",
+      "pricePerUnit": "Price per unit (silver)",
+      "notes": "Notes (optional)",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving..."
+    },
     "errors": {
       "loadFailed": "Failed to load inventory",
       "addFailed": "Failed to add item",
@@ -285,7 +294,17 @@
       "totalProfit": "Total net profit",
       "validate": "Validate Craft",
       "validating": "Validating...",
-      "loginRequired": "Sign in to validate"
+      "loginRequired": "Sign in to validate",
+      "recalculate": "Recalculate Prices",
+      "alreadyValidated": "Already Validated",
+      "sellCraft": "Sell Craft",
+      "materialsSummary": "Materials Summary",
+      "rawQty": "Raw Qty",
+      "rrrQty": "RRR Qty",
+      "fromInventory": "From inventory",
+      "toBuyQty": "To buy",
+      "avgPrice": "Avg price",
+      "totalCostMat": "Total cost"
     },
     "confirmModal": {
       "title": "Confirm Craft",
@@ -298,7 +317,16 @@
       "confirming": "Processing..."
     },
     "success": "Craft validated! Inventory updated.",
-    "error": "Error validating craft"
+    "error": "Error validating craft",
+    "sellModal": {
+      "title": "Confirm Sale",
+      "explanation": "This action will remove the crafted items from your virtual inventory.",
+      "noMoneyTracking": "Note: Money tracking is not yet implemented.",
+      "itemsToRemove": "Items to remove",
+      "cancel": "Cancel",
+      "confirm": "Confirm Sale",
+      "selling": "Selling..."
+    }
   },
   "footer": {
     "disclaimer": "This site is not affiliated with Sandbox Interactive or Albion Online.",
@@ -404,7 +432,6 @@
         "buyCity": "Buy City",
         "buyType": "Buy Type",
         "loadPrices": "Load Prices",
-        "useFocus": "Use Focus",
         "specialization": "Specialization",
         "noResources": "Add items to see required resources"
       },

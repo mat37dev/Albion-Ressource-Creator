@@ -16,13 +16,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const body = await req.json();
-  const updates: { quantity?: number; pricePerUnit?: number; updatedAt: Date } = {
+  const updates: { quantity?: number; pricePerUnit?: number; notes?: string | null; updatedAt: Date } = {
     updatedAt: new Date(),
   };
 
   if (body.quantity !== undefined) {
-    if (typeof body.quantity !== "number" || body.quantity <= 0) {
-      return NextResponse.json({ error: "invalid_quantity" }, { status: 400 });
+    if (typeof body.quantity !== "number" || body.quantity <= 0 || !Number.isInteger(body.quantity)) {
+      return NextResponse.json({ error: "quantity_must_be_integer" }, { status: 400 });
     }
     updates.quantity = body.quantity;
   }
@@ -31,6 +31,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "invalid_price" }, { status: 400 });
     }
     updates.pricePerUnit = body.pricePerUnit;
+  }
+  if (body.notes !== undefined) {
+    updates.notes = body.notes || null;
   }
 
   const [updated] = await db

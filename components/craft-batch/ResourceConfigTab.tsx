@@ -13,7 +13,6 @@ import { CITIES, City } from "@/lib/constants/cities";
 import { formatSilver } from "@/lib/utils";
 import { getItemNames } from "@/lib/utils/item-names";
 import { isRRRExempt } from "@/lib/albion/utils/rrr";
-import type { CraftBatchItem } from "@/lib/albion/types/craft-batch";
 
 interface ResourceConfigTabProps {
   craftBatch: ReturnType<typeof import("@/lib/hooks/useCraftBatch").useCraftBatch>;

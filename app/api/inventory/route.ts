@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { inventoryItems } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
+import { addOrMergeInventoryItem } from "@/lib/db/inventory-helpers";
 
 export async function GET() {
   const session = await auth();
@@ -31,8 +32,8 @@ export async function POST(req: NextRequest) {
   if (!itemId || typeof itemId !== "string") {
     return NextResponse.json({ error: "invalid_item_id" }, { status: 400 });
   }
-  if (typeof quantity !== "number" || quantity <= 0) {
-    return NextResponse.json({ error: "invalid_quantity" }, { status: 400 });
+  if (typeof quantity !== "number" || quantity <= 0 || !Number.isInteger(quantity)) {
+    return NextResponse.json({ error: "quantity_must_be_integer" }, { status: 400 });
   }
   if (typeof pricePerUnit !== "number" || pricePerUnit < 0) {
     return NextResponse.json({ error: "invalid_price" }, { status: 400 });
@@ -42,17 +43,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_source" }, { status: 400 });
   }
 
-  const [inserted] = await db
-    .insert(inventoryItems)
-    .values({
+  let insertedId: string;
+
+  await db.transaction(async (tx) => {
+    insertedId = await addOrMergeInventoryItem(tx, {
       userId: session.user.id,
       itemId,
       quantity,
       pricePerUnit,
       source,
       notes: notes ?? null,
-    })
-    .returning();
+    });
+  });
 
-  return NextResponse.json(inserted, { status: 201 });
+  // Fetch the final item to return
+  const [item] = await db
+    .select()
+    .from(inventoryItems)
+    .where(eq(inventoryItems.id, insertedId!))
+    .limit(1);
+
+  return NextResponse.json(item, { status: 201 });
 }
