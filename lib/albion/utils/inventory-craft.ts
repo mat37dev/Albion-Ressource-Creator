@@ -155,7 +155,6 @@ export function computeRRRReturns(
 
     const totalEffective = mat.effectiveQuantity;
     const invUsed = invItem?.quantityUsed ?? 0;
-    const buyUsed = buyItem ? mat.effectiveQuantity - invUsed : 0;
 
     if (totalEffective > 0) {
       const invRatio = invUsed / totalEffective;

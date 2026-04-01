@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { InventoryItem } from "@/lib/db/schema";
+import type { ConsumedLot } from "@/lib/albion/utils/inventory-craft";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,12 +16,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { RotateCcw, Settings2 } from "lucide-react";
 import { formatSilver } from "@/lib/utils";
-
-interface ConsumedLot {
-  lotId: string;
-  quantityUsed: number;
-  pricePerUnit: number;
-}
 
 interface LotSelectorProps {
   materialId: string;
@@ -79,7 +74,7 @@ export function LotSelector({
       >
         <Settings2 className="h-3 w-3" />
         <Badge variant={isManual ? "default" : "secondary"} className="text-xs px-1.5 py-0">
-          {isManual ? "Manuel" : "FIFO"}
+          {isManual ? t("lotSelector.manual") : t("lotSelector.fifo")}
         </Badge>
         <span className="text-xs text-muted-foreground">
           {selectedLots.length} lot{selectedLots.length > 1 ? "s" : ""}
@@ -89,7 +84,7 @@ export function LotSelector({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Sélection des lots</DialogTitle>
+            <DialogTitle>{t("lotSelector.title")}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3">
@@ -144,7 +139,7 @@ export function LotSelector({
 
             {!isManual && (
               <p className="text-xs text-muted-foreground">
-                Mode FIFO actif : les lots sont consommés du plus ancien au plus récent
+                {t("lotSelector.fifoHint")}
               </p>
             )}
           </div>
@@ -157,11 +152,11 @@ export function LotSelector({
                 className="gap-2"
               >
                 <RotateCcw className="h-4 w-4" />
-                Réinitialiser FIFO
+                {t("lotSelector.resetFifo")}
               </Button>
             )}
             <Button onClick={() => setOpen(false)}>
-              Fermer
+              {t("lotSelector.close")}
             </Button>
           </DialogFooter>
         </DialogContent>

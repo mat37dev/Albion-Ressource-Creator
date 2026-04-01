@@ -123,7 +123,7 @@ export function AddInventoryItemClient({ locale }: Props) {
                 className="text-xs"
                 onClick={() => setStep("select")}
               >
-                Changer
+                {t("changeItem")}
               </Button>
             </div>
           )}

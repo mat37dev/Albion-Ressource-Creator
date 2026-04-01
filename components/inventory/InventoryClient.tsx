@@ -119,10 +119,11 @@ export function InventoryClient({ locale }: Props) {
   const handleDeleteAll = async () => {
     setIsDeletingAll(true);
     try {
-      // Delete all items one by one
-      for (const item of inventory) {
-        await fetch(`/api/inventory/${item.id}`, { method: "DELETE" });
-      }
+      await fetch("/api/inventory", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: inventory.map((i) => i.id) }),
+      });
       await mutate();
       setShowDeleteAllConfirm(false);
     } catch {
@@ -208,7 +209,7 @@ export function InventoryClient({ locale }: Props) {
                         variant="ghost"
                         className="h-7 w-7 text-destructive/70 hover:text-destructive"
                         onClick={() => setShowDeleteAllConfirm(true)}
-                        title="Tout supprimer"
+                        title={t("deleteAll.confirm")}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -356,28 +357,28 @@ export function InventoryClient({ locale }: Props) {
       <Dialog open={showDeleteAllConfirm} onOpenChange={setShowDeleteAllConfirm}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Supprimer tout l'inventaire ?</DialogTitle>
+            <DialogTitle>{t("deleteAll.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Cette action supprimera tous les {inventory.length} items de votre inventaire. Cette action est irréversible.
+              {t("deleteAll.description", { count: inventory.length })}
             </p>
             <Card className="border-destructive/40 bg-destructive/10">
               <CardContent className="py-3 flex items-center gap-2 text-destructive text-sm">
                 <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>Attention : Cette action ne peut pas être annulée</span>
+                <span>{t("deleteAll.warning")}</span>
               </CardContent>
             </Card>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteAllConfirm(false)}>
-              Annuler
+              {t("deleteAll.cancel")}
             </Button>
             <Button variant="destructive" onClick={handleDeleteAll} disabled={isDeletingAll}>
               {isDeletingAll ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Suppression...</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("deleteAll.confirming")}</>
               ) : (
-                <>Tout supprimer</>
+                t("deleteAll.confirm")
               )}
             </Button>
           </DialogFooter>

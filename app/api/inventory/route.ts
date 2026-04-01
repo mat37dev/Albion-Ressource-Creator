@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { inventoryItems } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, inArray } from "drizzle-orm";
 import { addOrMergeInventoryItem } from "@/lib/db/inventory-helpers";
 
 export async function GET() {
@@ -64,4 +64,37 @@ export async function POST(req: NextRequest) {
     .limit(1);
 
   return NextResponse.json(item, { status: 201 });
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const { ids } = body as { ids: string[] };
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return NextResponse.json({ error: "invalid_ids" }, { status: 400 });
+  }
+
+  await db
+    .delete(inventoryItems)
+    .where(
+      inArray(
+        inventoryItems.id,
+        // Filter to only ids owned by this user (safety check)
+        (
+          await db
+            .select({ id: inventoryItems.id })
+            .from(inventoryItems)
+            .where(eq(inventoryItems.userId, session.user.id))
+        )
+          .map((r) => r.id)
+          .filter((id) => ids.includes(id))
+      )
+    );
+
+  return NextResponse.json({ success: true });
 }

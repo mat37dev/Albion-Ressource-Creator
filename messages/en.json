@@ -255,6 +255,15 @@
       "save": "Save",
       "saving": "Saving..."
     },
+    "changeItem": "Change",
+    "deleteAll": {
+      "title": "Delete entire inventory?",
+      "description": "This will permanently delete all {count} items from your inventory.",
+      "warning": "Warning: This action cannot be undone",
+      "cancel": "Cancel",
+      "confirm": "Delete all",
+      "confirming": "Deleting..."
+    },
     "errors": {
       "loadFailed": "Failed to load inventory",
       "addFailed": "Failed to add item",
@@ -282,7 +291,8 @@
       "buyCity": "Buy City",
       "totalCost": "Total Cost",
       "noInventoryItems": "No resources available in inventory",
-      "noAdditionalPurchases": "All resources are covered by inventory"
+      "noAdditionalPurchases": "All resources are covered by inventory",
+      "loadPrices": "Load Prices"
     },
     "results": {
       "inventoryCost": "Inventory cost",
@@ -304,7 +314,30 @@
       "fromInventory": "From inventory",
       "toBuyQty": "To buy",
       "avgPrice": "Avg price",
-      "totalCostMat": "Total cost"
+      "totalCostMat": "Total cost",
+      "craftingFees": "Crafting Fees",
+      "globalSummary": "Global Summary",
+      "itemDetails": "Details per Item",
+      "resourceSummary": "Resource Summary",
+      "rrrBreakdown": "RRR Returns",
+      "warnMissingPrices": "Some items have no sell price. Use \"Load best prices\" in the Items tab.",
+      "itemHeaders": {
+        "item": "Item",
+        "qty": "Qty",
+        "netPrice": "Net sell price",
+        "totalRevenue": "Total revenue",
+        "materialCost": "Material cost",
+        "netProfit": "Net profit",
+        "margin": "Margin %"
+      }
+    },
+    "lotSelector": {
+      "title": "Lot Selection",
+      "fifoHint": "FIFO mode active: lots are consumed from oldest to newest",
+      "resetFifo": "Reset to FIFO",
+      "close": "Close",
+      "manual": "Manual",
+      "fifo": "FIFO"
     },
     "confirmModal": {
       "title": "Confirm Craft",

@@ -60,23 +60,33 @@ export function useCraftBatch() {
   const [error, setError] = useState<string | null>(null);
 
   // Ajouter un item au batch (fetch recette + recalcul matériaux)
-  const addItem = useCallback(async (itemId: string, recipeId: string, quantity: number = 1) => {
-    // Fetch la recette pour stocker les matériaux
+  const addItem = useCallback(async (
+    itemId: string,
+    recipeId: string,
+    quantity: number = 1,
+    prefetchedRecipe?: { materials: Array<{ materialItemId: string; quantity: number }>; craftingFeeBase?: number }
+  ) => {
+    // Utiliser la recette pré-fetchée si disponible, sinon fetch
     let recipeMaterials: CraftBatchItem['recipeMaterials'] = undefined;
     let craftingFeeBase: number | undefined = undefined;
 
-    try {
-      const recipeRes = await fetch(`/api/recipes/${itemId}`);
-      if (recipeRes.ok) {
-        const recipe = await recipeRes.json();
-        recipeMaterials = recipe.materials?.map((m: any) => ({
-          materialItemId: m.materialItemId,
-          quantity: m.quantity,
-        }));
-        craftingFeeBase = recipe.craftingFeeBase ?? undefined;
+    if (prefetchedRecipe) {
+      recipeMaterials = prefetchedRecipe.materials;
+      craftingFeeBase = prefetchedRecipe.craftingFeeBase;
+    } else {
+      try {
+        const recipeRes = await fetch(`/api/recipes/${itemId}`);
+        if (recipeRes.ok) {
+          const recipe = await recipeRes.json();
+          recipeMaterials = recipe.materials?.map((m: any) => ({
+            materialItemId: m.materialItemId,
+            quantity: m.quantity,
+          }));
+          craftingFeeBase = recipe.craftingFeeBase ?? undefined;
+        }
+      } catch {
+        // pas de recette — item ajouté sans matériaux
       }
-    } catch {
-      // pas de recette — item ajouté sans matériaux
     }
 
     const newItem: CraftBatchItem = {

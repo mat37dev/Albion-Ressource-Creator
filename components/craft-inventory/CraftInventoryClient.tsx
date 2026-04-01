@@ -51,7 +51,6 @@ export function CraftInventoryClient({ locale }: Props) {
   const [toBuyPrices, setToBuyPrices] = useState<Record<string, number>>({});
   const [toBuyCities, setToBuyCities] = useState<Record<string, City>>({});
   const [loadingPrices, setLoadingPrices] = useState(false);
-  const [loadingRecalculate, setLoadingRecalculate] = useState(false);
 
   // Confirmation modal
   const [showConfirm, setShowConfirm] = useState(false);
@@ -94,16 +93,7 @@ export function CraftInventoryClient({ locale }: Props) {
 
   // Split between inventory and market
   const { fromInventory, toBuy } = useMemo(
-    () =>
-      splitMaterialNeeds(
-        effectiveMaterials.map((m) => ({
-          materialId: m.materialId,
-          rawQuantity: m.rawQuantity,
-          effectiveQuantity: m.effectiveQuantity
-        })),
-        inventory,
-        manualLotSelection
-      ),
+    () => splitMaterialNeeds(effectiveMaterials, inventory, manualLotSelection),
     [effectiveMaterials, inventory, manualLotSelection]
   );
 
@@ -164,7 +154,7 @@ export function CraftInventoryClient({ locale }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemsFingerprint, pricesFingerprint, lotsFingerprint]);
 
-  const handleLoadPrices = async () => {
+  const handleFetchPrices = async () => {
     if (toBuy.length === 0) return;
     setLoadingPrices(true);
     try {
@@ -197,42 +187,6 @@ export function CraftInventoryClient({ locale }: Props) {
       setToBuyCities((prev) => ({ ...prev, ...newCities }));
     } finally {
       setLoadingPrices(false);
-    }
-  };
-
-  const handleRecalculatePrices = async () => {
-    if (toBuy.length === 0) return;
-    setLoadingRecalculate(true);
-    try {
-      const ids = toBuy.map((m) => m.materialId);
-      const BATCH = 50;
-      const allPrices: any[] = [];
-      for (let i = 0; i < ids.length; i += BATCH) {
-        const batch = ids.slice(i, i + BATCH);
-        const params = new URLSearchParams({
-          items: batch.join(","),
-          locations: CITIES.join(","),
-          qualities: "1",
-        });
-        const res = await fetch(`/api/prices?${params}`);
-        if (!res.ok) continue;
-        const data = await res.json();
-        allPrices.push(...data);
-      }
-      const newPrices: Record<string, number> = {};
-      const newCities: Record<string, City> = {};
-      for (const mat of toBuy) {
-        const prices = allPrices.filter((p) => p.item_id === mat.materialId && p.sell_price_min > 0);
-        if (prices.length > 0) {
-          const best = prices.sort((a: any, b: any) => a.sell_price_min - b.sell_price_min)[0];
-          newPrices[mat.materialId] = best.sell_price_min;
-          newCities[mat.materialId] = best.city as City;
-        }
-      }
-      setToBuyPrices((prev) => ({ ...prev, ...newPrices }));
-      setToBuyCities((prev) => ({ ...prev, ...newCities }));
-    } finally {
-      setLoadingRecalculate(false);
     }
   };
 
@@ -280,14 +234,6 @@ export function CraftInventoryClient({ locale }: Props) {
 
   // Build craft payload
   const buildCraftPayload = () => {
-    // Calculate total crafting fees (nutrition cost)
-    const totalCraftingFees = craftBatch.batchState.items.reduce((sum, item) => {
-      const craftingFeeBase = item.craftingFeeBase ?? 0; // nutrition required
-      const craftingFeePerNutrition = craftBatch.batchState.globalSettings.craftingFeePerNutrition ?? 0;
-      const craftingFeePerUnit = craftingFeeBase * craftingFeePerNutrition;
-      return sum + (craftingFeePerUnit * item.quantity);
-    }, 0);
-
     // Net cost = material cost minus RRR value plus crafting fees
     const netCost = inventoryCost + additionalCost - rrrValue + totalCraftingFees;
 
@@ -352,14 +298,12 @@ export function CraftInventoryClient({ locale }: Props) {
     setIsSelling(true);
     setSellError(null);
     try {
-      for (const itemId of craftedItemIds) {
-        const res = await fetch(`/api/inventory/${itemId}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) {
-          throw new Error("Failed to delete item");
-        }
-      }
+      const res = await fetch("/api/inventory", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: craftedItemIds }),
+      });
+      if (!res.ok) throw new Error("Failed to delete items");
       await mutateInventory();
       setShowSellModal(false);
       setIsCraftValidated(false);
@@ -371,6 +315,15 @@ export function CraftInventoryClient({ locale }: Props) {
       setIsSelling(false);
     }
   };
+
+  // Pre-compute total stock per material to avoid repeated filter+reduce in JSX
+  const stockByMaterialId = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const inv of inventory) {
+      map[inv.itemId] = (map[inv.itemId] ?? 0) + inv.quantity;
+    }
+    return map;
+  }, [inventory]);
 
   const hasItems = craftBatch.batchState.items.length > 0;
 
@@ -457,7 +410,7 @@ export function CraftInventoryClient({ locale }: Props) {
                               </div>
                             </td>
                             <td className="text-right text-muted-foreground">
-                              {formatQuantity(inventory.filter((i) => i.itemId === item.materialId).reduce((s, i) => s + i.quantity, 0))}
+                              {formatQuantity(stockByMaterialId[item.materialId] ?? 0)}
                             </td>
                             <td className="text-right font-semibold text-white">
                               {formatQuantity(item.quantityUsed)}
@@ -499,11 +452,11 @@ export function CraftInventoryClient({ locale }: Props) {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={handleLoadPrices}
+                        onClick={handleFetchPrices}
                         disabled={loadingPrices}
                       >
                         <RefreshCw className={`h-4 w-4 mr-2 ${loadingPrices ? "animate-spin" : ""}`} />
-                        Charger prix
+                        {t("resources.loadPrices")}
                       </Button>
                     )}
                   </div>
@@ -590,7 +543,7 @@ export function CraftInventoryClient({ locale }: Props) {
               <Card className="border-yellow-500/40 bg-yellow-950/10">
                 <CardContent className="py-3 flex items-center gap-2 text-yellow-400 text-sm">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  Certains items n&apos;ont pas de prix de vente. Utilisez &quot;Charger meilleurs prix&quot; dans l&apos;onglet Items.
+                  {t("results.warnMissingPrices")}
                 </CardContent>
               </Card>
             )}
@@ -598,10 +551,10 @@ export function CraftInventoryClient({ locale }: Props) {
             {/* Section 1: Global Results + Recalculate Button + Validation Buttons */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-albion-gold">Résumé Global</h2>
+                <h2 className="text-xl font-semibold text-albion-gold">{t("results.globalSummary")}</h2>
                 {toBuy.length > 0 && (
-                  <Button onClick={handleRecalculatePrices} disabled={loadingRecalculate} size="sm" variant="outline">
-                    <RefreshCw className={`h-4 w-4 mr-2 ${loadingRecalculate ? 'animate-spin' : ''}`} />
+                  <Button onClick={handleFetchPrices} disabled={loadingPrices} size="sm" variant="outline">
+                    <RefreshCw className={`h-4 w-4 mr-2 ${loadingPrices ? 'animate-spin' : ''}`} />
                     {t("results.recalculate")}
                   </Button>
                 )}
@@ -624,7 +577,7 @@ export function CraftInventoryClient({ locale }: Props) {
                 {totalCraftingFees > 0 && (
                   <Card>
                     <CardContent className="pt-6">
-                      <p className="text-xs text-muted-foreground mb-1">Frais de crafting</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t("results.craftingFees")}</p>
                       <p className="text-xl font-bold text-white">{formatSilver(totalCraftingFees)}</p>
                     </CardContent>
                   </Card>
@@ -681,20 +634,20 @@ export function CraftInventoryClient({ locale }: Props) {
             {/* Section 2: Per-Item Details */}
             <Card>
               <CardHeader>
-                <CardTitle>Détails par Item</CardTitle>
+                <CardTitle>{t("results.itemDetails")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="albion-table">
                     <thead>
                       <tr>
-                        <th>Item</th>
-                        <th className="text-right">Qté</th>
-                        <th className="text-right">Prix vente net</th>
-                        <th className="text-right">Revenu total</th>
-                        <th className="text-right">Coût matériaux</th>
-                        <th className="text-right">Profit net</th>
-                        <th className="text-right">Marge %</th>
+                        <th>{t("results.itemHeaders.item")}</th>
+                        <th className="text-right">{t("results.itemHeaders.qty")}</th>
+                        <th className="text-right">{t("results.itemHeaders.netPrice")}</th>
+                        <th className="text-right">{t("results.itemHeaders.totalRevenue")}</th>
+                        <th className="text-right">{t("results.itemHeaders.materialCost")}</th>
+                        <th className="text-right">{t("results.itemHeaders.netProfit")}</th>
+                        <th className="text-right">{t("results.itemHeaders.margin")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -743,7 +696,7 @@ export function CraftInventoryClient({ locale }: Props) {
             {effectiveMaterials.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Résumé par Ressource</CardTitle>
+                  <CardTitle>{t("results.resourceSummary")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
@@ -814,7 +767,7 @@ export function CraftInventoryClient({ locale }: Props) {
             {rrrReturns.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Retours RRR</CardTitle>
+                  <CardTitle className="text-sm">{t("results.rrrBreakdown")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">

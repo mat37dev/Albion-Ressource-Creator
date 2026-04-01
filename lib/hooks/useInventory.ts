@@ -8,7 +8,8 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 export function useInventory() {
   const { data, error, mutate, isLoading } = useSWR<InventoryItem[]>(
     "/api/inventory",
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5000 }
   );
 
   return {

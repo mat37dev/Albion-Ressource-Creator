@@ -255,6 +255,15 @@
       "save": "Enregistrer",
       "saving": "Enregistrement..."
     },
+    "changeItem": "Changer",
+    "deleteAll": {
+      "title": "Supprimer tout l'inventaire ?",
+      "description": "Cette action supprimera tous les {count} items de votre inventaire. Cette action est irréversible.",
+      "warning": "Attention : Cette action ne peut pas être annulée",
+      "cancel": "Annuler",
+      "confirm": "Tout supprimer",
+      "confirming": "Suppression..."
+    },
     "errors": {
       "loadFailed": "Erreur lors du chargement de l'inventaire",
       "addFailed": "Erreur lors de l'ajout",
@@ -282,7 +291,8 @@
       "buyCity": "Ville d'achat",
       "totalCost": "Coût total",
       "noInventoryItems": "Aucune ressource disponible dans l'inventaire",
-      "noAdditionalPurchases": "Toutes les ressources sont couvertes par l'inventaire"
+      "noAdditionalPurchases": "Toutes les ressources sont couvertes par l'inventaire",
+      "loadPrices": "Charger les prix"
     },
     "results": {
       "inventoryCost": "Coût inventaire",
@@ -304,7 +314,30 @@
       "fromInventory": "Depuis inventaire",
       "toBuyQty": "À acheter",
       "avgPrice": "Prix moyen",
-      "totalCostMat": "Coût total"
+      "totalCostMat": "Coût total",
+      "craftingFees": "Frais de crafting",
+      "globalSummary": "Résumé Global",
+      "itemDetails": "Détails par Item",
+      "resourceSummary": "Résumé par Ressource",
+      "rrrBreakdown": "Retours RRR",
+      "warnMissingPrices": "Certains items n'ont pas de prix de vente. Utilisez \"Charger meilleurs prix\" dans l'onglet Items.",
+      "itemHeaders": {
+        "item": "Item",
+        "qty": "Qté",
+        "netPrice": "Prix vente net",
+        "totalRevenue": "Revenu total",
+        "materialCost": "Coût matériaux",
+        "netProfit": "Profit net",
+        "margin": "Marge %"
+      }
+    },
+    "lotSelector": {
+      "title": "Sélection des lots",
+      "fifoHint": "Mode FIFO actif : les lots sont consommés du plus ancien au plus récent",
+      "resetFifo": "Réinitialiser FIFO",
+      "close": "Fermer",
+      "manual": "Manuel",
+      "fifo": "FIFO"
     },
     "confirmModal": {
       "title": "Confirmer le craft",
