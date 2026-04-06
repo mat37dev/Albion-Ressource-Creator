@@ -28,6 +28,7 @@ import { Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { CITIES, City } from "@/lib/constants/cities";
 import { formatSilver, getProfitColor, formatQuantity } from "@/lib/utils";
 import { getItemNames } from "@/lib/utils/item-names";
+import { fetchClientPrices } from "@/lib/utils/fetch-prices";
 import {
   PREMIUM_TAX_DIRECT,
   PREMIUM_TAX_ORDER,
@@ -159,20 +160,7 @@ export function CraftInventoryClient({ locale }: Props) {
     setLoadingPrices(true);
     try {
       const ids = toBuy.map((m) => m.materialId);
-      const BATCH = 50;
-      const allPrices: any[] = [];
-      for (let i = 0; i < ids.length; i += BATCH) {
-        const batch = ids.slice(i, i + BATCH);
-        const params = new URLSearchParams({
-          items: batch.join(","),
-          locations: CITIES.join(","),
-          qualities: "1",
-        });
-        const res = await fetch(`/api/prices?${params}`);
-        if (!res.ok) continue;
-        const data = await res.json();
-        allPrices.push(...data);
-      }
+      const allPrices = await fetchClientPrices({ items: ids });
       const newPrices: Record<string, number> = {};
       const newCities: Record<string, City> = {};
       for (const mat of toBuy) {

@@ -15,6 +15,7 @@ import { ItemIcon } from "@/components/ui/item-icon";
 import { Trash2, Settings, Package, RefreshCw } from "lucide-react";
 import { SELL_LOCATIONS, type SellCity } from "@/lib/constants/cities";
 import { getItemNames } from "@/lib/utils/item-names";
+import { fetchRecipe } from "@/lib/utils/recipe-cache";
 
 interface ItemSelectionTabProps {
   craftBatch: ReturnType<typeof import("@/lib/hooks/useCraftBatch").useCraftBatch>;
@@ -47,17 +48,13 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
     } else {
       // Add item with quantity 1 — passe la recette déjà fetchée pour éviter un double appel
       try {
-        const res = await fetch(`/api/recipes/${item.id}`);
-        if (!res.ok) {
+        const recipe = await fetchRecipe(item.id);
+        if (!recipe) {
           alert("Aucune recette trouvée pour cet item");
           return;
         }
-        const recipe = await res.json();
         await craftBatch.addItem(item.id, recipe.id || item.id, 1, {
-          materials: recipe.materials?.map((m: any) => ({
-            materialItemId: m.materialItemId,
-            quantity: m.quantity,
-          })) ?? [],
+          materials: recipe.materials,
           craftingFeeBase: recipe.craftingFeeBase,
         });
       } catch (error) {
