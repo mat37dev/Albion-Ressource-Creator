@@ -5,7 +5,7 @@
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig(process.cwd());
 
-import { db } from '../lib/db/index';
+import { db } from '../lib/db';
 import { sql } from 'drizzle-orm';
 
 async function migrate() {

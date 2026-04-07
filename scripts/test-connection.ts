@@ -7,8 +7,8 @@
  * Ce script teste la connexion avec le driver Serverless (WebSocket)
  */
 
-import { db } from "@/lib/db";
-import { albionItems } from "@/lib/db/schema";
+import { db } from "../lib/db";
+import { albionItems } from "../lib/db/schema";
 import { sql } from "drizzle-orm";
 
 async function testConnection() {
@@ -44,7 +44,7 @@ async function testConnection() {
       WHERE table_schema = 'public'
       AND table_name IN ('craft_recipes', 'craft_recipe_materials')
     `);
-    const tables = tablesQuery as any[];
+    const tables = tablesQuery as unknown as any[];
     console.log(`✅ Tables craft trouvées: ${tables.length}/2`);
     tables.forEach((t: any) => console.log(`   - ${t.table_name}`));
 

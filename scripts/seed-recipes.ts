@@ -9,8 +9,8 @@
  * Run with: npx tsx scripts/seed-recipes.ts
  */
 
-import { db } from "@/lib/db";
-import { craftRecipes, craftRecipeMaterials } from "@/lib/db/schema";
+import { db } from '../lib/db';
+import { craftRecipes, craftRecipeMaterials } from "../lib/db/schema";
 
 interface RecipeDefinition {
   outputItemId: string;

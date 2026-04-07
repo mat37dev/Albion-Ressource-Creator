@@ -7,7 +7,7 @@
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig(process.cwd());
 
-import { db } from '../lib/db/index';
+import { db } from '../lib/db';
 import { albionItems, albionSyncMetadata } from '../lib/db/schema';
 import { sql, count } from 'drizzle-orm';
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { CITIES } from "@/lib/constants/cities";
 import { findTransportOpportunities } from "@/lib/albion/calculations/transport";

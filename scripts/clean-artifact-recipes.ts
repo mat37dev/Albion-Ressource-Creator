@@ -1,7 +1,7 @@
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig(process.cwd());
 
-import { db } from '../lib/db/index';
+import { db } from '../lib/db';
 import { craftRecipes, craftRecipeMaterials } from '../lib/db/schema';
 import { like, eq } from 'drizzle-orm';
 

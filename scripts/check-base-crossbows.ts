@@ -1,9 +1,9 @@
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig(process.cwd());
 
-import { db } from '../lib/db/index';
+import { db } from '../lib/db';
 import { albionItems, craftRecipes } from '../lib/db/schema';
-import { and, like, not, inArray } from 'drizzle-orm';
+import { and, like, not } from 'drizzle-orm';
 
 async function checkBaseCrossbows() {
   // Get all base crossbow items (T4-T8, no enchant)

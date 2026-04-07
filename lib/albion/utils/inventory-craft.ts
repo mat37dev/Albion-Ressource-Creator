@@ -48,6 +48,8 @@ export interface ToBuyItem {
  * Splits material requirements between inventory stock and additional purchases.
  * Consumes inventory lots in FIFO order (earliest createdAt first).
  * Uses effectiveQuantity for physical consumption, but adjusts cost to reflect rawQuantity.
+ * @param materials
+ * @param inventory
  * @param manualSelection Optional manual lot selection override (key: materialId, value: ordered lotIds)
  */
 export function splitMaterialNeeds(

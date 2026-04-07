@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { inventoryItems } from "@/lib/db/schema";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { addOrMergeInventoryItem } from "@/lib/db/inventory-helpers";
 
 interface CraftPayload {
@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Load the lots to validate ownership and available quantity
-  const lotIds = fromInventory.map((f) => f.lotId);
   const existingLots = await db
     .select()
     .from(inventoryItems)

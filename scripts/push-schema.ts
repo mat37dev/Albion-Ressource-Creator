@@ -3,7 +3,7 @@
  * Alternative à `drizzle-kit push` qui ne supporte pas WebSocket
  */
 
-import { db } from "@/lib/db";
+import { db } from '../lib/db';
 import { sql } from "drizzle-orm";
 
 async function pushSchema() {

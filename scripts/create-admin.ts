@@ -8,8 +8,8 @@
  * - Sinon → un nouveau compte admin est créé (password requis)
  */
 
-import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { db } from '../lib/db';
+import { users } from '../lib/db/schema';
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 

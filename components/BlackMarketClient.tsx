@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { OpportunityTable, type ColumnDef } from "@/components/OpportunityTable";
 import { ItemIcon } from "@/components/ui/item-icon";
 import { RefreshCw, TrendingUp, Store, Loader2, Clock } from "lucide-react";
-import type { PriceData } from "@/lib/albion/api";
 import { fetchClientPrices } from "@/lib/utils/fetch-prices";
 import type { FlipOpportunity } from "@/lib/albion/calculations/flip";
 
