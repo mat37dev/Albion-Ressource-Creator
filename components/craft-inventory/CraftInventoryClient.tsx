@@ -72,7 +72,7 @@ export function CraftInventoryClient({ locale }: Props) {
   // Compute effective materials (with RRR applied)
   const effectiveMaterials = useMemo(() => {
     const result: Array<{ materialId: string; rawQuantity: number; effectiveQuantity: number }> = [];
-    for (const [matId, matReq] of Object.entries(craftBatch.batchState.materials)) {
+    for (const [matId] of Object.entries(craftBatch.batchState.materials)) {
       // Compute effective quantity using RRR from each item
       let rawQty = 0;
       let effectiveQty = 0;
@@ -200,7 +200,7 @@ export function CraftInventoryClient({ locale }: Props) {
     const { isPremium } = craftBatch.batchState.globalSettings;
     return craftBatch.batchState.items.reduce((sum, item) => {
       const price = item.customSellPrice ?? 0;
-      let tax = 0;
+      let tax: number;
       if (item.sellType === "direct") tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
       else if (item.sellType === "order") tax = isPremium ? PREMIUM_TAX_ORDER : NON_PREMIUM_TAX_ORDER;
       else tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
@@ -641,7 +641,7 @@ export function CraftInventoryClient({ locale }: Props) {
                     <tbody>
                       {craftBatch.batchState.items.map((item) => {
                         const { isPremium } = craftBatch.batchState.globalSettings;
-                        let tax = 0;
+                        let tax: number;
                         if (item.sellType === "direct") tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
                         else if (item.sellType === "order") tax = isPremium ? PREMIUM_TAX_ORDER : NON_PREMIUM_TAX_ORDER;
                         else tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;

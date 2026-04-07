@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -23,7 +23,7 @@ export function LoginClient({ locale, callbackUrl, error }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState(error ?? "");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setFormError("");

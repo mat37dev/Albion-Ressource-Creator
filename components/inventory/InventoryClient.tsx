@@ -17,8 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent} from "@/components/ui/card";
 import { Loader2, Plus, Trash2, Hammer, AlertCircle } from "lucide-react";
 import { formatSilver, formatQuantity } from "@/lib/utils";
 import type { InventoryItem } from "@/lib/db/schema";

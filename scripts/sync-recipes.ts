@@ -214,6 +214,7 @@ async function syncRecipes() {
       ...(Array.isArray(itemsRoot.simpleitem) ? itemsRoot.simpleitem : []),
       ...(Array.isArray(itemsRoot.equipmentitem) ? itemsRoot.equipmentitem : []),
       ...(Array.isArray(itemsRoot.weapon) ? itemsRoot.weapon : []),
+      ...(Array.isArray(itemsRoot.transformationweapon) ? itemsRoot.transformationweapon : []),
       ...(Array.isArray(itemsRoot.consumableitem) ? itemsRoot.consumableitem : []),
       ...(Array.isArray(itemsRoot.farmableitem) ? itemsRoot.farmableitem : []),
     ];
@@ -238,6 +239,13 @@ async function syncRecipes() {
 
       // Skip non-standard items
       if (tier === 0 || category === 'other') {
+        skipped++;
+        continue;
+      }
+
+      // Skip artifacts - they are materials, not craftable end products
+      // Real recipes use artifacts as materials in their enchantment recipes
+      if (itemId.includes('ARTEFACT')) {
         skipped++;
         continue;
       }
