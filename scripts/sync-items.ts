@@ -73,7 +73,7 @@ function detectCategory(id: string): string {
     if (upper.includes('SWORD') || upper.includes('AXE') || upper.includes('MACE') ||
         upper.includes('HAMMER') || upper.includes('SPEAR') || upper.includes('DAGGER') ||
         upper.includes('BOW') || upper.includes('CROSSBOW') || upper.includes('STAFF') ||
-        upper.includes('QUARTERSTAFF')) {
+        upper.includes('QUARTERSTAFF') || upper.includes('SHAPESHIFTER')) {
       return 'weapon';
     }
   }
@@ -128,15 +128,15 @@ function detectSubcategory(id: string): string {
   if (upper.match(/T\d+_LEATHER(@\d)?$/)) return 'leather';
   if (upper.includes('_STONEBLOCK')) return 'stoneblock';
 
-  // Weapons
+  // Weapons (check CROSSBOW before BOW to avoid false matches)
   if (upper.includes('SWORD')) return 'sword';
   if (upper.includes('AXE')) return 'axe';
   if (upper.includes('MACE')) return 'mace';
   if (upper.includes('HAMMER')) return 'hammer';
   if (upper.includes('SPEAR')) return 'spear';
   if (upper.includes('DAGGER')) return 'dagger';
-  if (upper.includes('BOW')) return 'bow';
   if (upper.includes('CROSSBOW')) return 'crossbow';
+  if (upper.includes('BOW')) return 'bow';
   if (upper.includes('QUARTERSTAFF')) return 'quarterstaff';
   if (upper.includes('FIRESTAFF')) return 'fire';
   if (upper.includes('FROSTSTAFF')) return 'frost';
@@ -144,6 +144,7 @@ function detectSubcategory(id: string): string {
   if (upper.includes('CURSEDSTAFF')) return 'curse';
   if (upper.includes('HOLYSTAFF')) return 'holy';
   if (upper.includes('NATURESTAFF')) return 'nature';
+  if (upper.includes('SHAPESHIFTER')) return 'shapeshifter';
 
   // Consumables
   if (upper.includes('_MEAL_')) return 'food';

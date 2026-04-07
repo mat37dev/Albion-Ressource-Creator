@@ -79,7 +79,7 @@ function detectCategory(id: string): string {
     if (upper.includes('SWORD') || upper.includes('AXE') || upper.includes('MACE') ||
         upper.includes('HAMMER') || upper.includes('SPEAR') || upper.includes('DAGGER') ||
         upper.includes('BOW') || upper.includes('CROSSBOW') || upper.includes('STAFF') ||
-        upper.includes('QUARTERSTAFF')) {
+        upper.includes('QUARTERSTAFF') || upper.includes('SHAPESHIFTER')) {
       return 'weapon';
     }
   }

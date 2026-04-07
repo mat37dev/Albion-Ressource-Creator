@@ -75,7 +75,8 @@
       "Bash(rm \"/mnt/c/Users/mathi/Documents/AlbionCreator/components/TransportClient.tsx\")",
       "Bash(rm -rf \"/mnt/c/Users/mathi/Documents/AlbionCreator/app/[locale]/transport\")",
       "Bash(head:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(psql:*)"
     ]
   }
 }
