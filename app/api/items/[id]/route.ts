@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 export const revalidate = 3600; // Cache 1 heure
 
 export async function GET(
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
