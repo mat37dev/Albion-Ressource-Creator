@@ -136,6 +136,23 @@ async function pushSchema() {
     `);
     console.log("   ✅ Table 'craft_recipe_materials' créée\n");
 
+    // Table: inventory_items
+    console.log("📦 Création de la table 'inventory_items'...");
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS inventory_items (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        item_id TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        price_per_unit REAL NOT NULL,
+        source TEXT NOT NULL,
+        notes TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log("   ✅ Table 'inventory_items' créée\n");
+
     // Indexes
     console.log("📊 Création des indexes...");
 
@@ -152,6 +169,11 @@ async function pushSchema() {
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_recipe_materials_recipe
       ON craft_recipe_materials(recipe_id)
+    `);
+
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_inventory_items_user
+      ON inventory_items(user_id, created_at)
     `);
 
     console.log("   ✅ Indexes créés\n");

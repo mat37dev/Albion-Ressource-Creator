@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { UserMenu } from "./UserMenu";
-import { TrendingUp, Hammer, Repeat, Store } from "lucide-react";
+import { TrendingUp, Hammer, Repeat, Store, Package } from "lucide-react";
 
 interface HeaderProps {
   locale: string;
@@ -15,11 +16,13 @@ interface HeaderProps {
 export function Header({ locale }: HeaderProps) {
   const t = useTranslations("nav");
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   const navItems = [
     { href: `/${locale}`, label: t("home"), icon: TrendingUp },
     { href: `/${locale}/flipper`, label: t("flipper"), icon: Repeat },
     { href: `/${locale}/craft`, label: t("craft"), icon: Hammer },
+    ...(session?.user ? [{ href: `/${locale}/inventory`, label: t("inventory"), icon: Package }] : []),
     { href: `/${locale}/black-market`, label: t("blackMarket"), icon: Store },
   ];
 

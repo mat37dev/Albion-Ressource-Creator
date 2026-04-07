@@ -14,9 +14,9 @@ import { OpportunityTable, type ColumnDef } from "@/components/OpportunityTable"
 import { ItemIcon } from "@/components/ui/item-icon";
 import { RefreshCw, TrendingUp, Store, Loader2, Clock } from "lucide-react";
 import type { PriceData } from "@/lib/albion/api";
+import { fetchClientPrices } from "@/lib/utils/fetch-prices";
 import type { FlipOpportunity } from "@/lib/albion/calculations/flip";
 
-const BATCH_SIZE = 50;
 
 function formatRelativeTime(isoDate: string): { label: string; color: string } {
   const date = new Date(isoDate);
@@ -73,27 +73,14 @@ export function BlackMarketClient() {
     setOpportunities([]);
 
     try {
-      // Split item IDs into batches to avoid 431 Request Header Fields Too Large
-      const batches: string[][] = [];
-      for (let i = 0; i < itemIds.length; i += BATCH_SIZE) {
-        batches.push(itemIds.slice(i, i + BATCH_SIZE));
-      }
+      const totalBatches = Math.ceil(itemIds.length / 50);
+      setProgress({ current: 0, total: totalBatches });
 
-      const allPrices: PriceData[] = [];
-      setProgress({ current: 0, total: batches.length });
-
-      for (let i = 0; i < batches.length; i++) {
-        const params = new URLSearchParams({
-          items: batches[i].join(","),
-          locations: `${fromCity},Black Market`,
-          qualities: "1",
-        });
-        const res = await fetch(`/api/prices?${params}`);
-        if (!res.ok) throw new Error("Failed");
-        const prices: PriceData[] = await res.json();
-        allPrices.push(...prices);
-        setProgress({ current: i + 1, total: batches.length });
-      }
+      const allPrices = await fetchClientPrices({
+        items: itemIds,
+        locations: [fromCity, "Black Market"],
+        onProgress: (completed, total) => setProgress({ current: completed, total }),
+      });
 
       const localPrices = allPrices.filter(
         (p) => p.city.toLowerCase() === fromCity.toLowerCase()
@@ -284,7 +271,7 @@ export function BlackMarketClient() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 text-center">
-                  {Math.round((progress.current / progress.total) * 100)}% — {itemIds.length} items analysés par lots de {BATCH_SIZE}
+                  {Math.round((progress.current / progress.total) * 100)}% — {itemIds.length} items analysés par lots de 50
                 </p>
               </div>
             )}

@@ -196,12 +196,12 @@ export function SettingsTab({ craftBatch }: SettingsTabProps) {
         <CardContent>
           <div className="p-4 border rounded-lg bg-albion-blue/5">
             <Label htmlFor="craftingFeePerNutrition" className="text-base font-semibold mb-2 block">
-              Prix par nutrition (silver)
+              Prix pour 100 nutritions (silver)
             </Label>
             <p className="text-xs text-muted-foreground mb-3">
-              Entrez le coût en silver par point de nutrition de la station.
+              Entrez le coût en silver pour 100 points de nutrition de la station.
               Laissez à 0 si vous utilisez votre propre station (gratuit).
-              Le coût total = nutrition de la recette × prix par nutrition × quantité craftée.
+              Le coût total = (nutrition de la recette / 100) × prix pour 100 nutritions × quantité craftée.
             </p>
             <Input
               id="craftingFeePerNutrition"
@@ -218,7 +218,7 @@ export function SettingsTab({ craftBatch }: SettingsTabProps) {
               placeholder="0"
             />
             <p className="text-xs text-muted-foreground mt-2">
-              Exemple : 0.03 silver/nutrition × 300 nutrition = 9 silver de frais par craft
+              Exemple : 3 silver/100 nutrition × 300 nutrition = 9 silver de frais par craft
             </p>
           </div>
         </CardContent>

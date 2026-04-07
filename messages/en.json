@@ -5,7 +5,8 @@
     "flipper": "Flipper",
     "blackMarket": "Black Market",
     "settings": "Settings",
-    "profile": "Profile"
+    "profile": "Profile",
+    "inventory": "Inventory"
   },
   "auth": {
     "loginTitle": "Sign In",
@@ -205,6 +206,161 @@
       "cape": "Capes"
     }
   },
+  "inventory": {
+    "title": "Virtual Inventory",
+    "description": "Manage your purchased resources and track their real cost",
+    "addItem": "Add Item",
+    "craftFromInventory": "Craft from Inventory",
+    "noItems": "No items in inventory. Add your purchased resources.",
+    "filterAll": "All",
+    "filterBought": "Purchased",
+    "filterCrafted": "Crafted",
+    "filterRrr": "RRR Returns",
+    "columns": {
+      "item": "Item",
+      "quantity": "Quantity",
+      "pricePerUnit": "Price/Unit",
+      "total": "Total",
+      "source": "Source",
+      "date": "Date"
+    },
+    "sources": {
+      "bought": "Purchase",
+      "crafted": "Crafted",
+      "rrr_return": "RRR Return"
+    },
+    "addModal": {
+      "title": "Add Item to Inventory",
+      "selectItem": "Select an item",
+      "quantity": "Quantity",
+      "pricePerUnit": "Price per unit (silver)",
+      "source": "Source",
+      "notes": "Notes (optional)",
+      "cancel": "Cancel",
+      "confirm": "Add",
+      "adding": "Adding..."
+    },
+    "deleteConfirm": "Delete this inventory row?",
+    "deleteCancel": "Cancel",
+    "deleteConfirmBtn": "Delete",
+    "deleting": "Deleting...",
+    "editQuantity": "Edit quantity",
+    "saving": "Saving...",
+    "editModal": {
+      "title": "Edit Item",
+      "quantity": "Quantity",
+      "pricePerUnit": "Price per unit (silver)",
+      "notes": "Notes (optional)",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "changeItem": "Change",
+    "deleteAll": {
+      "title": "Delete entire inventory?",
+      "description": "This will permanently delete all {count} items from your inventory.",
+      "warning": "Warning: This action cannot be undone",
+      "cancel": "Cancel",
+      "confirm": "Delete all",
+      "confirming": "Deleting..."
+    },
+    "errors": {
+      "loadFailed": "Failed to load inventory",
+      "addFailed": "Failed to add item",
+      "deleteFailed": "Failed to delete item",
+      "updateFailed": "Failed to update item"
+    }
+  },
+  "craftInventory": {
+    "title": "Craft from Inventory",
+    "description": "Craft using your resources at their real purchase price",
+    "tabs": {
+      "items": "Items to Craft",
+      "settings": "Settings",
+      "resources": "Resources",
+      "results": "Results"
+    },
+    "resources": {
+      "fromInventory": "From Inventory",
+      "toBuy": "Additional Purchases",
+      "material": "Material",
+      "stockQty": "Stock",
+      "qtyUsed": "Qty Used",
+      "pricePerUnit": "Price/Unit",
+      "qtyNeeded": "Qty Needed",
+      "buyCity": "Buy City",
+      "totalCost": "Total Cost",
+      "noInventoryItems": "No resources available in inventory",
+      "noAdditionalPurchases": "All resources are covered by inventory",
+      "loadPrices": "Load Prices"
+    },
+    "results": {
+      "inventoryCost": "Inventory cost",
+      "additionalCost": "Additional purchases",
+      "rrrReturns": "RRR Returns",
+      "rrrFromInventory": "RRR from inventory",
+      "rrrFromMarket": "RRR from purchases",
+      "totalRevenue": "Total revenue",
+      "totalProfit": "Total net profit",
+      "validate": "Validate Craft",
+      "validating": "Validating...",
+      "loginRequired": "Sign in to validate",
+      "recalculate": "Recalculate Prices",
+      "alreadyValidated": "Already Validated",
+      "sellCraft": "Sell Craft",
+      "materialsSummary": "Materials Summary",
+      "rawQty": "Raw Qty",
+      "rrrQty": "RRR Qty",
+      "fromInventory": "From inventory",
+      "toBuyQty": "To buy",
+      "avgPrice": "Avg price",
+      "totalCostMat": "Total cost",
+      "craftingFees": "Crafting Fees",
+      "globalSummary": "Global Summary",
+      "itemDetails": "Details per Item",
+      "resourceSummary": "Resource Summary",
+      "rrrBreakdown": "RRR Returns",
+      "warnMissingPrices": "Some items have no sell price. Use \"Load best prices\" in the Items tab.",
+      "itemHeaders": {
+        "item": "Item",
+        "qty": "Qty",
+        "netPrice": "Net sell price",
+        "totalRevenue": "Total revenue",
+        "materialCost": "Material cost",
+        "netProfit": "Net profit",
+        "margin": "Margin %"
+      }
+    },
+    "lotSelector": {
+      "title": "Lot Selection",
+      "fifoHint": "FIFO mode active: lots are consumed from oldest to newest",
+      "resetFifo": "Reset to FIFO",
+      "close": "Close",
+      "manual": "Manual",
+      "fifo": "FIFO"
+    },
+    "confirmModal": {
+      "title": "Confirm Craft",
+      "consumedTitle": "Resources consumed (inventory)",
+      "purchasesTitle": "Additional purchases",
+      "craftedTitle": "Crafted items",
+      "rrrTitle": "RRR Returns",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "confirming": "Processing..."
+    },
+    "success": "Craft validated! Inventory updated.",
+    "error": "Error validating craft",
+    "sellModal": {
+      "title": "Confirm Sale",
+      "explanation": "This action will remove the crafted items from your virtual inventory.",
+      "noMoneyTracking": "Note: Money tracking is not yet implemented.",
+      "itemsToRemove": "Items to remove",
+      "cancel": "Cancel",
+      "confirm": "Confirm Sale",
+      "selling": "Selling..."
+    }
+  },
   "footer": {
     "disclaimer": "This site is not affiliated with Sandbox Interactive or Albion Online.",
     "dataSource": "Data provided by the Albion Online Data Project API."
@@ -309,7 +465,6 @@
         "buyCity": "Buy City",
         "buyType": "Buy Type",
         "loadPrices": "Load Prices",
-        "useFocus": "Use Focus",
         "specialization": "Specialization",
         "noResources": "Add items to see required resources"
       },

@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ItemIcon } from "@/components/ui/item-icon";
 import { RefreshCw, ArrowRight, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import type { PriceData } from "@/lib/albion/api";
+import { fetchClientPrices } from "@/lib/utils/fetch-prices";
 import type { TransportOpportunity } from "@/lib/albion/calculations/transport";
 
 type SortCol = "itemName" | "buyCity" | "sellCity" | "buyPrice" | "sellPrice" | "profit" | "profitPercent" | "updatedAt";
@@ -71,27 +72,7 @@ export function FlipperClient() {
     setLoading(true);
     setError(null);
     try {
-      const BATCH = 50;
-      const locationsStr = CITIES.join(",");
-      const allPrices: PriceData[] = [];
-
-      for (let i = 0; i < itemIds.length; i += BATCH) {
-        const batch = itemIds.slice(i, i + BATCH);
-        const params = new URLSearchParams({
-          items: batch.join(","),
-          locations: locationsStr,
-          qualities: "1",
-        });
-        const res = await fetch(`/api/prices?${params}`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data: PriceData[] = await res.json();
-        allPrices.push(...data);
-
-        if (i + BATCH < itemIds.length) {
-          await new Promise((r) => setTimeout(r, 300));
-        }
-      }
-
+      const allPrices = await fetchClientPrices({ items: itemIds, delayMs: 300 });
       setPrices(allPrices);
     } catch {
       setError(t("error"));

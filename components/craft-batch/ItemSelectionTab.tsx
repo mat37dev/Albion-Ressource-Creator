@@ -13,8 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ItemIcon } from "@/components/ui/item-icon";
 import { Trash2, Settings, Package, RefreshCw } from "lucide-react";
-import { CITIES, SELL_LOCATIONS, type City, type SellCity } from "@/lib/constants/cities";
+import { SELL_LOCATIONS, type SellCity } from "@/lib/constants/cities";
 import { getItemNames } from "@/lib/utils/item-names";
+import { fetchRecipe } from "@/lib/utils/recipe-cache";
 
 interface ItemSelectionTabProps {
   craftBatch: ReturnType<typeof import("@/lib/hooks/useCraftBatch").useCraftBatch>;
@@ -24,8 +25,6 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
   const locale = useLocale();
   const [globalQuantity, setGlobalQuantity] = useState(1);
   const [itemNames, setItemNames] = useState<Record<string, string>>({});
-  const [loadingPrices, setLoadingPrices] = useState(false);
-
   const selectedItemIds = new Set(craftBatch.batchState.items.map(i => i.itemId));
 
   // Load item names for display
@@ -47,15 +46,17 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
         craftBatch.removeItem(batchItem.id);
       }
     } else {
-      // Add item with quantity 1
+      // Add item with quantity 1 — passe la recette déjà fetchée pour éviter un double appel
       try {
-        const res = await fetch(`/api/recipes/${item.id}`);
-        if (!res.ok) {
+        const recipe = await fetchRecipe(item.id);
+        if (!recipe) {
           alert("Aucune recette trouvée pour cet item");
           return;
         }
-        const recipe = await res.json();
-        await craftBatch.addItem(item.id, recipe.id || item.id, 1);
+        await craftBatch.addItem(item.id, recipe.id || item.id, 1, {
+          materials: recipe.materials,
+          craftingFeeBase: recipe.craftingFeeBase,
+        });
       } catch (error) {
         console.error("Error adding item:", error);
         alert("Erreur lors de l'ajout de l'item");
@@ -70,91 +71,39 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
     });
   };
 
-  // Load best sell prices for ALL items
-  const handleLoadAllBestPrices = async () => {
-    setLoadingPrices(true);
-    try {
-      const isPremium = craftBatch.batchState.globalSettings.isPremium;
+  // Load best sell prices for ALL items — délègue à fetchAllPrices qui batch + auto-sélectionne
+  const handleLoadAllBestPrices = () => craftBatch.fetchAllPrices();
 
-      for (const batchItem of craftBatch.batchState.items) {
-        const params = new URLSearchParams({
-          items: batchItem.itemId,
-          locations: CITIES.join(","),
-          qualities: "1",
-        });
-        const res = await fetch(`/api/prices?${params}`);
-        if (!res.ok) continue;
-
-        const prices = await res.json();
-
-        // Find best direct sell and best order (ignore prices = 0)
-        let bestDirect = { price: 0, city: "Lymhurst" as City };
-        let bestOrder = { price: 0, city: "Lymhurst" as City };
-
-        prices.forEach((p: any) => {
-          // Vente directe = on remplit le meilleur ordre d'achat (buy_price_max)
-          if (p.buy_price_max > 0 && p.buy_price_max > bestDirect.price) {
-            bestDirect = { price: p.buy_price_max, city: p.city as City };
-          }
-          // Ordre de vente = on liste au prix compétitif (sell_price_min)
-          if (p.sell_price_min > 0 && p.sell_price_min > bestOrder.price) {
-            bestOrder = { price: p.sell_price_min, city: p.city as City };
-          }
-        });
-
-        // If no valid prices found, skip
-        if (bestDirect.price === 0 && bestOrder.price === 0) continue;
-
-        // Compare net prices (after taxes)
-        const directNet = bestDirect.price * (isPremium ? 0.96 : 0.92); // -4% or -8%
-        const orderNet = bestOrder.price * (isPremium ? 0.935 : 0.895); // -6.5% or -10.5%
-
-        if (directNet > orderNet && bestDirect.price > 0) {
-          craftBatch.updateItemConfig(batchItem.id, {
-            sellCity: bestDirect.city,
-            sellType: "direct",
-            customSellPrice: bestDirect.price,
-          });
-        } else if (bestOrder.price > 0) {
-          craftBatch.updateItemConfig(batchItem.id, {
-            sellCity: bestOrder.city,
-            sellType: "order",
-            customSellPrice: bestOrder.price,
-          });
-        }
+  // Retourne le prix depuis le cache si disponible, sinon fetch l'API
+  const getPriceForCity = async (
+    itemId: string,
+    city: SellCity,
+    sellType: 'direct' | 'order' | 'blackmarket'
+  ): Promise<number> => {
+    const useBuyPrice = city === "Black Market" || sellType === "direct" || sellType === "blackmarket";
+    const cached = craftBatch.batchState.priceCache.get(itemId);
+    if (cached) {
+      const entry = cached.find(p => p.city === city);
+      if (entry) {
+        return useBuyPrice ? entry.buy_price_max : entry.sell_price_min;
       }
-    } catch (error) {
-      console.error("Error loading best prices:", error);
-    } finally {
-      setLoadingPrices(false);
     }
+    // Fallback : fetch si pas en cache
+    const params = new URLSearchParams({ items: itemId, locations: city, qualities: "1" });
+    const res = await fetch(`/api/prices?${params}`);
+    if (!res.ok) return 0;
+    const prices = await res.json();
+    const cityPrice = prices[0];
+    return cityPrice ? (useBuyPrice ? cityPrice.buy_price_max : cityPrice.sell_price_min) : 0;
   };
 
   // Update price when city changes
   const handleCityChange = async (batchItemId: string, itemId: string, newCity: SellCity) => {
+    const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
+    const sellType = batchItem?.sellType ?? "order";
     craftBatch.updateItemConfig(batchItemId, { sellCity: newCity });
-
     try {
-      const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
-      const params = new URLSearchParams({
-        items: itemId,
-        locations: newCity,
-        qualities: "1",
-      });
-      const res = await fetch(`/api/prices?${params}`);
-      if (!res.ok) return;
-
-      const prices = await res.json();
-      const cityPrice = prices[0];
-
-      // Black Market → toujours buy_price_max (vente à un ordre d'achat)
-      const sellType = batchItem?.sellType ?? "order";
-      const newPrice = cityPrice
-        ? (newCity === "Black Market" || sellType === 'direct')
-          ? cityPrice.buy_price_max
-          : cityPrice.sell_price_min
-        : 0;
-
+      const newPrice = await getPriceForCity(itemId, newCity, sellType);
       craftBatch.updateItemConfig(batchItemId, { customSellPrice: newPrice });
     } catch (error) {
       console.error("Error updating price:", error);
@@ -162,27 +111,11 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
   };
 
   const handleTypeChange = async (batchItemId: string, itemId: string, newType: 'direct' | 'order') => {
+    const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
+    if (!batchItem) return;
     craftBatch.updateItemConfig(batchItemId, { sellType: newType });
-
-    // Fetch price for the current city only
     try {
-      const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
-      if (!batchItem) return;
-
-      const params = new URLSearchParams({
-        items: itemId,
-        locations: batchItem.sellCity,
-        qualities: "1",
-      });
-      const res = await fetch(`/api/prices?${params}`);
-      if (!res.ok) return;
-
-      const prices = await res.json();
-      const cityPrice = prices[0];
-      const newPrice = cityPrice
-        ? newType === 'order' ? cityPrice.sell_price_min : cityPrice.buy_price_max
-        : 0;
-
+      const newPrice = await getPriceForCity(itemId, batchItem.sellCity, newType);
       craftBatch.updateItemConfig(batchItemId, { customSellPrice: newPrice });
     } catch (error) {
       console.error("Error updating price:", error);
@@ -214,23 +147,6 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
             >
               Compte Premium (taxes réduites : 4% vente directe, 6.5% ordre de vente)
-            </Label>
-          </div>
-
-          {/* Use Focus */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="useFocus"
-              checked={craftBatch.batchState.globalSettings.useFocus}
-              onCheckedChange={(checked) =>
-                craftBatch.updateGlobalSettings({ useFocus: checked as boolean })
-              }
-            />
-            <Label
-              htmlFor="useFocus"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-            >
-              Utiliser le focus pour améliorer le RRR (Resource Return Rate)
             </Label>
           </div>
         </CardContent>
@@ -289,10 +205,10 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
               <CardTitle>Configuration des items ({craftBatch.batchState.items.length})</CardTitle>
               <Button
                 onClick={handleLoadAllBestPrices}
-                disabled={loadingPrices}
+                disabled={craftBatch.loading}
                 className="bg-albion-gold text-albion-dark hover:bg-albion-gold/90"
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${loadingPrices ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 mr-2 ${craftBatch.loading ? 'animate-spin' : ''}`} />
                 Charger meilleurs prix
               </Button>
             </div>

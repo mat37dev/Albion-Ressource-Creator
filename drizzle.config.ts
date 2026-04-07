@@ -11,5 +11,5 @@ export default {
     url: process.env.DATABASE_URL!,
   },
   // On ne synchronise que les tables que nous avons définies
-  tablesFilter: ["albion_items", "albion_sync_metadata", "favorites", "price_alerts", "users", "craft_recipes", "craft_recipe_materials"],
+  tablesFilter: ["albion_items", "albion_sync_metadata", "favorites", "price_alerts", "users", "craft_recipes", "craft_recipe_materials", "inventory_items"],
 } satisfies Config;

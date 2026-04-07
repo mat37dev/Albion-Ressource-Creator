@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { albionItems } from '@/lib/db/schema';
-import { sql, count } from 'drizzle-orm';
+import { count } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,8 +18,6 @@ export async function GET() {
   };
 
   try {
-    // Test 1: Basic query
-    const testResult = await db.execute(sql`SELECT 1 as test`);
     checks.dbConnection = 'connected';
 
     // Test 2: Count items

@@ -107,3 +107,22 @@ export type CraftRecipe = typeof craftRecipes.$inferSelect;
 export type NewCraftRecipe = typeof craftRecipes.$inferInsert;
 export type CraftRecipeMaterial = typeof craftRecipeMaterials.$inferSelect;
 export type NewCraftRecipeMaterial = typeof craftRecipeMaterials.$inferInsert;
+
+// ─────────────────────────────────────────────
+// VIRTUAL INVENTORY
+// ─────────────────────────────────────────────
+
+export const inventoryItems = pgTable("inventory_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  itemId: text("item_id").notNull(),
+  quantity: integer("quantity").notNull(),
+  pricePerUnit: real("price_per_unit").notNull(),
+  source: text("source").notNull(), // 'bought' | 'crafted' | 'rrr_return'
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type InventoryItem = typeof inventoryItems.$inferSelect;
+export type NewInventoryItem = typeof inventoryItems.$inferInsert;

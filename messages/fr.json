@@ -5,7 +5,8 @@
     "flipper": "Flipper",
     "blackMarket": "Black Market",
     "settings": "Paramètres",
-    "profile": "Profil"
+    "profile": "Profil",
+    "inventory": "Inventaire"
   },
   "auth": {
     "loginTitle": "Connexion",
@@ -205,6 +206,161 @@
       "cape": "Capes"
     }
   },
+  "inventory": {
+    "title": "Inventaire virtuel",
+    "description": "Gérez vos ressources achetées et suivez leur coût réel",
+    "addItem": "Ajouter un item",
+    "craftFromInventory": "Crafter depuis l'inventaire",
+    "noItems": "Aucun item dans l'inventaire. Ajoutez vos ressources achetées.",
+    "filterAll": "Tous",
+    "filterBought": "Achats",
+    "filterCrafted": "Craftés",
+    "filterRrr": "Retours RRR",
+    "columns": {
+      "item": "Item",
+      "quantity": "Quantité",
+      "pricePerUnit": "Prix/unité",
+      "total": "Total",
+      "source": "Source",
+      "date": "Date"
+    },
+    "sources": {
+      "bought": "Achat",
+      "crafted": "Crafté",
+      "rrr_return": "Retour RRR"
+    },
+    "addModal": {
+      "title": "Ajouter un item à l'inventaire",
+      "selectItem": "Sélectionner un item",
+      "quantity": "Quantité",
+      "pricePerUnit": "Prix par unité (silver)",
+      "source": "Source",
+      "notes": "Notes (optionnel)",
+      "cancel": "Annuler",
+      "confirm": "Ajouter",
+      "adding": "Ajout..."
+    },
+    "deleteConfirm": "Supprimer cette ligne de l'inventaire ?",
+    "deleteCancel": "Annuler",
+    "deleteConfirmBtn": "Supprimer",
+    "deleting": "Suppression...",
+    "editQuantity": "Modifier la quantité",
+    "saving": "Enregistrement...",
+    "editModal": {
+      "title": "Modifier l'item",
+      "quantity": "Quantité",
+      "pricePerUnit": "Prix par unité (silver)",
+      "notes": "Notes (optionnel)",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "saving": "Enregistrement..."
+    },
+    "changeItem": "Changer",
+    "deleteAll": {
+      "title": "Supprimer tout l'inventaire ?",
+      "description": "Cette action supprimera tous les {count} items de votre inventaire. Cette action est irréversible.",
+      "warning": "Attention : Cette action ne peut pas être annulée",
+      "cancel": "Annuler",
+      "confirm": "Tout supprimer",
+      "confirming": "Suppression..."
+    },
+    "errors": {
+      "loadFailed": "Erreur lors du chargement de l'inventaire",
+      "addFailed": "Erreur lors de l'ajout",
+      "deleteFailed": "Erreur lors de la suppression",
+      "updateFailed": "Erreur lors de la mise à jour"
+    }
+  },
+  "craftInventory": {
+    "title": "Craft depuis l'inventaire",
+    "description": "Craftez en utilisant vos ressources à leur prix d'achat réel",
+    "tabs": {
+      "items": "Items à crafter",
+      "settings": "Paramétrage",
+      "resources": "Ressources",
+      "results": "Résultats"
+    },
+    "resources": {
+      "fromInventory": "Depuis l'inventaire",
+      "toBuy": "Achats complémentaires",
+      "material": "Matériau",
+      "stockQty": "Stock",
+      "qtyUsed": "Qté utilisée",
+      "pricePerUnit": "Prix/unité",
+      "qtyNeeded": "Qté nécessaire",
+      "buyCity": "Ville d'achat",
+      "totalCost": "Coût total",
+      "noInventoryItems": "Aucune ressource disponible dans l'inventaire",
+      "noAdditionalPurchases": "Toutes les ressources sont couvertes par l'inventaire",
+      "loadPrices": "Charger les prix"
+    },
+    "results": {
+      "inventoryCost": "Coût inventaire",
+      "additionalCost": "Achats supplémentaires",
+      "rrrReturns": "Retours RRR",
+      "rrrFromInventory": "RRR depuis inventaire",
+      "rrrFromMarket": "RRR depuis achats",
+      "totalRevenue": "Revenu total",
+      "totalProfit": "Profit net total",
+      "validate": "Valider le craft",
+      "validating": "Validation...",
+      "loginRequired": "Connectez-vous pour valider",
+      "recalculate": "Recalculer les prix",
+      "alreadyValidated": "Déjà validé",
+      "sellCraft": "Vendre Craft",
+      "materialsSummary": "Résumé des matériaux",
+      "rawQty": "Qté brute",
+      "rrrQty": "Qté RRR",
+      "fromInventory": "Depuis inventaire",
+      "toBuyQty": "À acheter",
+      "avgPrice": "Prix moyen",
+      "totalCostMat": "Coût total",
+      "craftingFees": "Frais de crafting",
+      "globalSummary": "Résumé Global",
+      "itemDetails": "Détails par Item",
+      "resourceSummary": "Résumé par Ressource",
+      "rrrBreakdown": "Retours RRR",
+      "warnMissingPrices": "Certains items n'ont pas de prix de vente. Utilisez \"Charger meilleurs prix\" dans l'onglet Items.",
+      "itemHeaders": {
+        "item": "Item",
+        "qty": "Qté",
+        "netPrice": "Prix vente net",
+        "totalRevenue": "Revenu total",
+        "materialCost": "Coût matériaux",
+        "netProfit": "Profit net",
+        "margin": "Marge %"
+      }
+    },
+    "lotSelector": {
+      "title": "Sélection des lots",
+      "fifoHint": "Mode FIFO actif : les lots sont consommés du plus ancien au plus récent",
+      "resetFifo": "Réinitialiser FIFO",
+      "close": "Fermer",
+      "manual": "Manuel",
+      "fifo": "FIFO"
+    },
+    "confirmModal": {
+      "title": "Confirmer le craft",
+      "consumedTitle": "Ressources consommées (inventaire)",
+      "purchasesTitle": "Achats supplémentaires",
+      "craftedTitle": "Items craftés",
+      "rrrTitle": "Retours RRR",
+      "cancel": "Annuler",
+      "confirm": "Confirmer",
+      "confirming": "En cours..."
+    },
+    "success": "Craft validé ! Inventaire mis à jour.",
+    "error": "Erreur lors de la validation du craft",
+    "sellModal": {
+      "title": "Confirmer la vente",
+      "explanation": "Cette action supprimera les items craftés de votre inventaire virtuel.",
+      "noMoneyTracking": "Note : Le suivi monétaire n'est pas encore implémenté.",
+      "itemsToRemove": "Items à supprimer",
+      "cancel": "Annuler",
+      "confirm": "Confirmer la vente",
+      "selling": "Vente en cours..."
+    }
+  },
   "footer": {
     "disclaimer": "Ce site n'est pas affilié avec Sandbox Interactive ou Albion Online.",
     "dataSource": "Données fournies par l'API Albion Online Data Project."
@@ -309,7 +465,6 @@
         "buyCity": "Ville d'achat",
         "buyType": "Type d'achat",
         "loadPrices": "Charger les prix",
-        "useFocus": "Utiliser le focus",
         "specialization": "Spécialisation",
         "noResources": "Ajoutez des items pour voir les ressources nécessaires"
       },

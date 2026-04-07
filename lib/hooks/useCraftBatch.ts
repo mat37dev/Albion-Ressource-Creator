@@ -1,7 +1,9 @@
 import { useState, useCallback } from "react";
 import { CraftBatchState, CraftBatchItem, MaterialRequirement } from "@/lib/albion/types/craft-batch";
-import { City, CITIES } from "@/lib/constants/cities";
+import { City } from "@/lib/constants/cities";
 import { PriceData } from "@/lib/albion/api";
+import { fetchClientPrices } from "@/lib/utils/fetch-prices";
+import { fetchRecipe } from "@/lib/utils/recipe-cache";
 
 /**
  * Recompute le map des matériaux à partir de la liste d'items (synchrone).
@@ -46,7 +48,6 @@ export function useCraftBatch() {
     items: [],
     materials: {},
     globalSettings: {
-      useFocus: false,
       isPremium: false,
       craftingFeePerNutrition: 0,
     },
@@ -61,23 +62,29 @@ export function useCraftBatch() {
   const [error, setError] = useState<string | null>(null);
 
   // Ajouter un item au batch (fetch recette + recalcul matériaux)
-  const addItem = useCallback(async (itemId: string, recipeId: string, quantity: number = 1) => {
-    // Fetch la recette pour stocker les matériaux
+  const addItem = useCallback(async (
+    itemId: string,
+    recipeId: string,
+    quantity: number = 1,
+    prefetchedRecipe?: { materials: Array<{ materialItemId: string; quantity: number }>; craftingFeeBase?: number }
+  ) => {
+    // Utiliser la recette pré-fetchée si disponible, sinon fetch
     let recipeMaterials: CraftBatchItem['recipeMaterials'] = undefined;
     let craftingFeeBase: number | undefined = undefined;
 
-    try {
-      const recipeRes = await fetch(`/api/recipes/${itemId}`);
-      if (recipeRes.ok) {
-        const recipe = await recipeRes.json();
-        recipeMaterials = recipe.materials?.map((m: any) => ({
-          materialItemId: m.materialItemId,
-          quantity: m.quantity,
-        }));
-        craftingFeeBase = recipe.craftingFeeBase ?? undefined;
+    if (prefetchedRecipe) {
+      recipeMaterials = prefetchedRecipe.materials;
+      craftingFeeBase = prefetchedRecipe.craftingFeeBase;
+    } else {
+      try {
+        const recipe = await fetchRecipe(itemId);
+        if (recipe) {
+          recipeMaterials = recipe.materials;
+          craftingFeeBase = recipe.craftingFeeBase ?? undefined;
+        }
+      } catch {
+        // pas de recette — item ajouté sans matériaux
       }
-    } catch {
-      // pas de recette — item ajouté sans matériaux
     }
 
     const newItem: CraftBatchItem = {
@@ -149,13 +156,9 @@ export function useCraftBatch() {
         let materials = batchItem.recipeMaterials;
 
         if (!materials) {
-          const recipeRes = await fetch(`/api/recipes/${batchItem.itemId}`);
-          if (!recipeRes.ok) continue;
-          const recipe = await recipeRes.json();
-          materials = recipe.materials?.map((m: any) => ({
-            materialItemId: m.materialItemId,
-            quantity: m.quantity,
-          }));
+          const recipe = await fetchRecipe(batchItem.itemId);
+          if (!recipe) continue;
+          materials = recipe.materials;
         }
 
         if (materials) {
@@ -218,23 +221,7 @@ export function useCraftBatch() {
 
       if (allItemIds.length === 0) return;
 
-      const batches: string[][] = [];
-      for (let i = 0; i < allItemIds.length; i += 50) {
-        batches.push(allItemIds.slice(i, i + 50));
-      }
-
-      const allPrices: PriceData[] = [];
-      for (const batch of batches) {
-        const params = new URLSearchParams({
-          items: batch.join(","),
-          locations: CITIES.join(","),
-          qualities: "1",
-        });
-        const res = await fetch(`/api/prices?${params}`);
-        if (!res.ok) throw new Error("Failed to fetch prices");
-        const prices = await res.json();
-        allPrices.push(...prices);
-      }
+      const allPrices = await fetchClientPrices({ items: allItemIds });
 
       const priceMap = new Map<string, PriceData[]>();
       for (const price of allPrices) {
