@@ -18,8 +18,10 @@ function computeMaterialsFromItems(
   for (const item of items) {
     if (!item.recipeMaterials) continue;
 
+    const outputQuantity = item.outputQuantity ?? 1;
+
     for (const material of item.recipeMaterials) {
-      const totalNeeded = material.quantity * item.quantity;
+      const totalNeeded = material.quantity * item.quantity / outputQuantity;
 
       if (materialsMap[material.materialItemId]) {
         materialsMap[material.materialItemId].totalQuantity += totalNeeded;
@@ -66,21 +68,24 @@ export function useCraftBatch() {
     itemId: string,
     recipeId: string,
     quantity: number = 1,
-    prefetchedRecipe?: { materials: Array<{ materialItemId: string; quantity: number }>; craftingFeeBase?: number }
+    prefetchedRecipe?: { materials: Array<{ materialItemId: string; quantity: number }>; craftingFeeBase?: number; outputQuantity?: number }
   ) => {
     // Utiliser la recette pré-fetchée si disponible, sinon fetch
     let recipeMaterials: CraftBatchItem['recipeMaterials'] = undefined;
     let craftingFeeBase: number | undefined = undefined;
+    let outputQuantity: number | undefined = undefined;
 
     if (prefetchedRecipe) {
       recipeMaterials = prefetchedRecipe.materials;
       craftingFeeBase = prefetchedRecipe.craftingFeeBase;
+      outputQuantity = prefetchedRecipe.outputQuantity;
     } else {
       try {
         const recipe = await fetchRecipe(itemId);
         if (recipe) {
           recipeMaterials = recipe.materials;
           craftingFeeBase = recipe.craftingFeeBase ?? undefined;
+          outputQuantity = recipe.outputQuantity ?? undefined;
         }
       } catch {
         // pas de recette — item ajouté sans matériaux
@@ -96,6 +101,7 @@ export function useCraftBatch() {
       sellType: "order",
       recipeMaterials,
       craftingFeeBase,
+      outputQuantity,
     };
 
     setBatchState(prev => {
@@ -162,8 +168,9 @@ export function useCraftBatch() {
         }
 
         if (materials) {
+          const outputQty = batchItem.outputQuantity ?? 1;
           for (const material of materials) {
-            const totalNeeded = material.quantity * batchItem.quantity;
+            const totalNeeded = material.quantity * batchItem.quantity / outputQty;
 
             if (materialsMap[material.materialItemId]) {
               materialsMap[material.materialItemId].totalQuantity += totalNeeded;

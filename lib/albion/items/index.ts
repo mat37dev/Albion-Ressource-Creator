@@ -155,7 +155,7 @@ export function getCategoriesMetadata(): CategoryInfo[] {
   return [
     { id: "resource_raw",      subcategories: ["ore", "wood", "fiber", "hide", "rock"] },
     { id: "resource_refined",  subcategories: ["metalbar", "planks", "cloth", "leather", "stoneblock"] },
-    { id: "weapon",            subcategories: ["sword", "axe", "mace", "hammer", "spear", "dagger", "quarterstaff", "bow", "crossbow", "fire", "frost", "arcane", "curse", "holy", "nature", "shapeshifter"] },
+    { id: "weapon",            subcategories: ["sword", "axe", "mace", "hammer", "spear", "dagger", "quarterstaff", "bow", "crossbow", "fire", "frost", "arcane", "curse", "holy", "divine", "nature", "shapeshifter"] },
     { id: "armor",             subcategories: ["plate", "leather", "cloth"] },
     { id: "offhand",           subcategories: ["shield", "tome", "orb", "torch"] },
     { id: "consumable",        subcategories: ["food", "potion"] },

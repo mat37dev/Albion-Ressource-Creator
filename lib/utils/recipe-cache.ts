@@ -6,6 +6,7 @@ export interface RecipeMaterial {
 export interface RecipeResult {
   id: string;
   craftingFeeBase?: number;
+  outputQuantity?: number; // Nombre d'items produits par craft (5 pour potions normales, 10 pour potions artefact)
   materials: RecipeMaterial[];
 }
 

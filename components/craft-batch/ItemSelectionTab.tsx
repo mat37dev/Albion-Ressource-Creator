@@ -56,6 +56,7 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
         await craftBatch.addItem(item.id, recipe.id || item.id, 1, {
           materials: recipe.materials,
           craftingFeeBase: recipe.craftingFeeBase,
+          outputQuantity: recipe.outputQuantity,
         });
       } catch (error) {
         console.error("Error adding item:", error);

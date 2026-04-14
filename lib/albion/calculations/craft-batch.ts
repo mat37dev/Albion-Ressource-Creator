@@ -49,6 +49,10 @@ export async function calculateBatchProfit(
     // RRR spécifique à cet item (ou défaut 18%)
     const itemRRR = (item.rrr !== undefined ? item.rrr : 18) / 100;
 
+    // Nombre d'actions de craft nécessaires (1 craft = outputQuantity items)
+    const outputQuantity = item.outputQuantity ?? 1;
+    const numCraftActions = item.quantity / outputQuantity;
+
     // Calculer coût matériaux pour cet item AVEC son RRR spécifique
     let itemMaterialCost = 0;
     if (recipeMaterials) {
@@ -56,7 +60,7 @@ export async function calculateBatchProfit(
         const matReq = batchState.materials[material.materialItemId];
         if (matReq) {
           const rrr = isRRRExempt(material.materialItemId) ? 0 : itemRRR;
-          const effectiveQty = Math.ceil(material.quantity * item.quantity * (1 - rrr));
+          const effectiveQty = Math.ceil(material.quantity * numCraftActions * (1 - rrr));
           itemMaterialCost += effectiveQty * matReq.pricePerUnit;
 
           // Accumuler la quantité RRR globale par matériau
@@ -82,9 +86,9 @@ export async function calculateBatchProfit(
 
     const netSellPrice = sellPrice * (1 - taxRate);
 
-    // Frais de station (nutrition × prix par nutrition)
+    // Frais de station (nutrition × prix par nutrition × nombre d'actions de craft)
     const craftingFeePerUnit = craftingFeeBase * craftingFeePerNutrition;
-    const totalCraftingFee = craftingFeePerUnit * item.quantity;
+    const totalCraftingFee = craftingFeePerUnit * numCraftActions;
 
     // Profit
     const totalNetRevenue = netSellPrice * item.quantity;

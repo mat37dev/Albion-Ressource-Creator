@@ -11,6 +11,7 @@ export interface CraftBatchItem {
   rrr?: number; // RRR spécifique à cet item (défaut 18%)
   recipeMaterials?: Array<{ materialItemId: string; quantity: number }>; // Cache recette
   craftingFeeBase?: number; // Nutrition requise pour le craft (depuis la recette)
+  outputQuantity?: number; // Nombre d'items produits par action de craft (défaut: 1, potions: 5, potions artefact: 10)
 }
 
 export interface MaterialRequirement {
