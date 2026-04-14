@@ -6,11 +6,12 @@ export interface CraftBatchItem {
   recipeId: string; // UUID de la recette choisie
   quantity: number;
   sellCity: SellCity;
-  sellType: 'direct' | 'order' | 'blackmarket';
+  sellType: 'direct' | 'order' | 'blackmarket' | 'exchange';
   customSellPrice?: number;
   rrr?: number; // RRR spécifique à cet item (défaut 18%)
   recipeMaterials?: Array<{ materialItemId: string; quantity: number }>; // Cache recette
   craftingFeeBase?: number; // Nutrition requise pour le craft (depuis la recette)
+  outputQuantity?: number; // Nombre d'items produits par action de craft (défaut: 1, potions: 5, potions artefact: 10)
 }
 
 export interface MaterialRequirement {
@@ -18,7 +19,7 @@ export interface MaterialRequirement {
   totalQuantity: number; // Agrégé sur tous les items du batch
   effectiveQuantity: number; // Après RRR
   buyCity: City;
-  buyType: 'buy' | 'order';
+  buyType: 'buy' | 'order' | 'exchange';
   customBuyPrice?: number;
   pricePerUnit: number;
   totalCost: number;
@@ -48,9 +49,12 @@ export interface CraftBatchResult {
   totalProfit: number;
   totalCost: number;
   totalRevenue: number;
+  totalTaxPaid: number;       // Taxes de vente (prélevées sur le revenu)
+  totalBuyTaxPaid: number;    // Frais de mise en place ordres d'achat (2.5%)
+  totalCraftingFees: number;  // Frais de station de craft
   aggregatedMaterials: MaterialSummary[];
-  rrr: number; // Resource Return Rate appliqué
-  journalProfit?: number; // Profit des registres si activés
+  rrr: number;
+  journalProfit?: number;
 }
 
 export interface CraftItemResult {
@@ -64,6 +68,9 @@ export interface CraftItemResult {
   materialCost: number;
   sellPrice: number;
   netSellPrice: number; // Après taxes
+  taxPaid: number;     // Taxe de vente payée pour cet item
+  taxRate: number;     // Taux de taxe de vente appliqué (ex: 0.04 pour 4%)
+  craftingFee: number; // Frais de station de craft pour cet item
   sellCity: SellCity;
   sellType: string;
 }
@@ -71,11 +78,12 @@ export interface CraftItemResult {
 export interface MaterialSummary {
   materialId: string;
   materialName: string;
-  totalQuantity: number; // Quantité brute (sans RRR)
+  totalQuantity: number;    // Quantité brute (sans RRR)
   effectiveQuantity: number; // Quantité avec RRR (ce qu'on doit acheter)
-  rrrQuantity: number; // Alias explicite = effectiveQuantity arrondi au supérieur
+  rrrQuantity: number;      // Alias explicite = effectiveQuantity arrondi au supérieur
   pricePerUnit: number;
-  totalCost: number; // Coût basé sur rrrQuantity
+  totalCost: number;        // Coût basé sur rrrQuantity
+  buyTaxPaid: number;       // Setup fee 2.5% si ordre d'achat, sinon 0
   buyCity: City;
   buyType: string;
 }

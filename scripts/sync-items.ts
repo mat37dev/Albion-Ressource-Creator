@@ -138,6 +138,7 @@ function detectSubcategory(id: string): string {
   if (upper.includes('CROSSBOW')) return 'crossbow';
   if (upper.includes('BOW')) return 'bow';
   if (upper.includes('QUARTERSTAFF')) return 'quarterstaff';
+  if (upper.includes('DIVINESTAFF')) return 'holy';
   if (upper.includes('FIRESTAFF')) return 'fire';
   if (upper.includes('FROSTSTAFF')) return 'frost';
   if (upper.includes('ARCANESTAFF')) return 'arcane';

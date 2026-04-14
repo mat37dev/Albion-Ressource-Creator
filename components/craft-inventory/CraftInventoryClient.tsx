@@ -34,6 +34,7 @@ import {
   PREMIUM_TAX_ORDER,
   NON_PREMIUM_TAX_DIRECT,
   NON_PREMIUM_TAX_ORDER,
+  SETUP_FEE,
 } from "@/lib/constants/bonuses";
 
 interface Props {
@@ -203,8 +204,22 @@ export function CraftInventoryClient({ locale }: Props) {
       let tax: number;
       if (item.sellType === "direct") tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
       else if (item.sellType === "order") tax = isPremium ? PREMIUM_TAX_ORDER : NON_PREMIUM_TAX_ORDER;
+      else if (item.sellType === "exchange") tax = 0;
       else tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
       return sum + price * (1 - tax) * item.quantity;
+    }, 0);
+  }, [craftBatch.batchState.items, craftBatch.batchState.globalSettings]);
+
+  const totalTaxPaid = useMemo(() => {
+    const { isPremium } = craftBatch.batchState.globalSettings;
+    return craftBatch.batchState.items.reduce((sum, item) => {
+      const price = item.customSellPrice ?? 0;
+      let tax: number;
+      if (item.sellType === "direct") tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
+      else if (item.sellType === "order") tax = isPremium ? PREMIUM_TAX_ORDER : NON_PREMIUM_TAX_ORDER;
+      else if (item.sellType === "exchange") tax = 0;
+      else tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
+      return sum + price * tax * item.quantity;
     }, 0);
   }, [craftBatch.batchState.items, craftBatch.batchState.globalSettings]);
 
@@ -592,6 +607,140 @@ export function CraftInventoryClient({ locale }: Props) {
                 </Card>
               </div>
 
+              {/* Récapitulatif des coûts et taxes */}
+              <Card className="border-orange-500/30 bg-orange-500/5">
+                <CardContent className="pt-4">
+                  <p className="text-sm font-semibold text-orange-400 mb-4">Récapitulatif des coûts</p>
+
+                  {/* Tableau des postes de coût */}
+                  <div className="space-y-2 mb-4">
+                    {/* Coût inventaire */}
+                    {inventoryCost > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
+                          Ressources depuis l&apos;inventaire
+                        </span>
+                        <span className="font-medium text-white">-{formatSilver(inventoryCost)}</span>
+                      </div>
+                    )}
+
+                    {/* Coût achats supplémentaires */}
+                    {additionalCost > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block"></span>
+                          Ressources à acheter (achat direct)
+                        </span>
+                        <span className="font-medium text-white">-{formatSilver(additionalCost)}</span>
+                      </div>
+                    )}
+
+                    {/* Frais de station */}
+                    {totalCraftingFees > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block"></span>
+                          Frais de station de craft
+                        </span>
+                        <span className="font-medium text-purple-400">-{formatSilver(totalCraftingFees)}</span>
+                      </div>
+                    )}
+
+                    {/* RRR (retour) */}
+                    {rrrValue > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                          Retour RRR (ressources récupérées)
+                        </span>
+                        <span className="font-medium text-emerald-400">+{formatSilver(rrrValue)}</span>
+                      </div>
+                    )}
+
+                    {/* Taxes de vente */}
+                    {totalTaxPaid > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block"></span>
+                          Taxes de vente
+                        </span>
+                        <span className="font-medium text-orange-400">-{formatSilver(totalTaxPaid)}</span>
+                      </div>
+                    )}
+
+                    <div className="border-t border-white/10 pt-2 flex justify-between items-center text-sm font-semibold">
+                      <span className="text-muted-foreground">Total des coûts et taxes</span>
+                      <span className="text-red-400">
+                        -{formatSilver(inventoryCost + additionalCost + totalCraftingFees + totalTaxPaid - rrrValue)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Détail des taxes de vente par item */}
+                  <div className="border-t border-white/10 pt-3">
+                    <p className="text-xs text-muted-foreground mb-2">Taxes de vente par item crafté</p>
+                    <div className="space-y-1">
+                      {craftBatch.batchState.items.map((item) => {
+                        const { isPremium } = craftBatch.batchState.globalSettings;
+                        const price = item.customSellPrice ?? 0;
+                        let taxRate = 0;
+                        let taxLabel = "";
+                        if (item.sellType === "direct") {
+                          taxRate = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
+                          taxLabel = `Vente directe — ${(taxRate * 100).toFixed(1)}%`;
+                        } else if (item.sellType === "order") {
+                          taxRate = isPremium ? PREMIUM_TAX_ORDER : NON_PREMIUM_TAX_ORDER;
+                          taxLabel = `Ordre de vente — ${(taxRate * 100).toFixed(1)}% (2.5% setup + ${isPremium ? '4%' : '8%'})`;
+                        } else if (item.sellType === "exchange") {
+                          taxLabel = "Échange — aucune taxe";
+                        }
+                        const itemTax = price * taxRate * item.quantity;
+                        const grossRevenue = price * item.quantity;
+                        return (
+                          <div key={item.id} className="flex justify-between text-xs">
+                            <div className="text-muted-foreground">
+                              <span>{materialNames[item.itemId] ?? item.itemId}</span>
+                              <span className="ml-2 text-muted-foreground/60">×{item.quantity} — {taxLabel}</span>
+                            </div>
+                            <div className="flex gap-3 text-right">
+                              <span className="text-muted-foreground/70">brut: {formatSilver(grossRevenue)}</span>
+                              <span className="text-orange-400">{itemTax > 0 ? `-${formatSilver(itemTax)}` : "—"}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Frais de station par item */}
+                  {totalCraftingFees > 0 && (
+                    <div className="border-t border-white/10 pt-3 mt-3">
+                      <p className="text-xs text-muted-foreground mb-2">Frais de station par item</p>
+                      <div className="space-y-1">
+                        {craftBatch.batchState.items.map((item) => {
+                          const craftingFeeBase = item.craftingFeeBase ?? 0;
+                          const craftingFeePerNutrition = craftBatch.batchState.globalSettings.craftingFeePerNutrition ?? 0;
+                          const itemFee = craftingFeeBase * craftingFeePerNutrition * item.quantity;
+                          if (itemFee === 0) return null;
+                          return (
+                            <div key={item.id} className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                {materialNames[item.itemId] ?? item.itemId} ×{item.quantity}
+                                <span className="ml-2 text-muted-foreground/60">
+                                  ({craftingFeeBase} nutrition × {craftingFeePerNutrition} silver)
+                                </span>
+                              </span>
+                              <span className="text-purple-400">-{formatSilver(itemFee)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Validation buttons */}
               <div className="flex items-center justify-end gap-3">
                 <Button
@@ -644,6 +793,7 @@ export function CraftInventoryClient({ locale }: Props) {
                         let tax: number;
                         if (item.sellType === "direct") tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
                         else if (item.sellType === "order") tax = isPremium ? PREMIUM_TAX_ORDER : NON_PREMIUM_TAX_ORDER;
+                        else if (item.sellType === "exchange") tax = 0;
                         else tax = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
                         const netUnit = (item.customSellPrice ?? 0) * (1 - tax);
                         const itemRevenue = netUnit * item.quantity;
