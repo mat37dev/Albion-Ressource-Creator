@@ -3,7 +3,8 @@ import {
   PREMIUM_TAX_DIRECT,
   PREMIUM_TAX_ORDER,
   NON_PREMIUM_TAX_DIRECT,
-  NON_PREMIUM_TAX_ORDER
+  NON_PREMIUM_TAX_ORDER,
+  SETUP_FEE,
 } from "@/lib/constants/bonuses";
 import { getItemNames } from "@/lib/utils/item-names";
 import { isRRRExempt } from "@/lib/albion/utils/rrr";
@@ -75,6 +76,8 @@ export async function calculateBatchProfit(
       taxRate = isPremium ? PREMIUM_TAX_ORDER : NON_PREMIUM_TAX_ORDER;
     } else if (item.sellType === 'blackmarket') {
       taxRate = isPremium ? PREMIUM_TAX_DIRECT : NON_PREMIUM_TAX_DIRECT;
+    } else if (item.sellType === 'exchange') {
+      taxRate = 0; // Échange : pas de taxe marché
     }
 
     const netSellPrice = sellPrice * (1 - taxRate);
@@ -90,6 +93,8 @@ export async function calculateBatchProfit(
     const unitProfit = totalProfit / item.quantity;
     const profitPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
 
+    const totalTaxForItem = sellPrice * taxRate * item.quantity;
+
     itemResults.push({
       batchItemId: item.id,
       itemId: item.itemId,
@@ -101,6 +106,9 @@ export async function calculateBatchProfit(
       materialCost: totalCost,
       sellPrice: sellPrice * item.quantity,
       netSellPrice: totalNetRevenue,
+      taxPaid: totalTaxForItem,
+      taxRate,
+      craftingFee: totalCraftingFee,
       sellCity: item.sellCity,
       sellType: item.sellType,
     });
@@ -117,11 +125,16 @@ export async function calculateBatchProfit(
   const totalProfit = itemResults.reduce((sum, r) => sum + r.totalProfit, 0) + journalProfit;
   const totalCost = itemResults.reduce((sum, r) => sum + r.materialCost, 0);
   const totalRevenue = itemResults.reduce((sum, r) => sum + r.netSellPrice, 0) + journalProfit;
+  const totalTaxPaid = itemResults.reduce((sum, r) => sum + r.taxPaid, 0);
+  const totalCraftingFees = itemResults.reduce((sum, r) => sum + (r.craftingFee ?? 0), 0);
 
-  // Résumé des matériaux avec quantités brutes ET RRR
+  // Résumé des matériaux avec quantités brutes ET RRR + taxe d'achat
   const aggregatedMaterials: MaterialSummary[] = Object.entries(batchState.materials).map(
     ([matId, matReq]) => {
       const rrrQty = rrrQuantityMap[matId] ?? matReq.totalQuantity;
+      const matCost = rrrQty * matReq.pricePerUnit;
+      // Setup fee 2.5% si ordre d'achat
+      const buyTaxPaid = matReq.buyType === 'order' ? matCost * SETUP_FEE : 0;
       return {
         materialId: matId,
         materialName: itemNames[matId] || matId,
@@ -129,18 +142,24 @@ export async function calculateBatchProfit(
         effectiveQuantity: rrrQty,
         rrrQuantity: rrrQty,
         pricePerUnit: matReq.pricePerUnit,
-        totalCost: rrrQty * matReq.pricePerUnit, // Coût basé sur quantité RRR
+        totalCost: matCost,
+        buyTaxPaid,
         buyCity: matReq.buyCity,
         buyType: matReq.buyType,
       };
     }
   );
 
+  const totalBuyTaxPaid = aggregatedMaterials.reduce((sum, m) => sum + m.buyTaxPaid, 0);
+
   return {
     itemResults,
     totalProfit,
     totalCost,
     totalRevenue,
+    totalTaxPaid,
+    totalBuyTaxPaid,
+    totalCraftingFees,
     aggregatedMaterials,
     rrr: 0.18,
     journalProfit: journalProfit > 0 ? journalProfit : undefined,

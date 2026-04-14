@@ -7,12 +7,13 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatSilver(amount: number): string {
   if (amount >= 1_000_000) {
-    return `${(amount / 1_000_000).toFixed(1)}M`;
+    return Math.round(amount).toLocaleString();
   }
   if (amount >= 1_000) {
-    return `${(amount / 1_000).toFixed(1)}k`;
+    return `${(amount / 1_000).toFixed(2)}k`;
   }
-  return amount.toLocaleString();
+  const rounded = Math.round(amount * 10) / 10;
+  return rounded % 1 === 0 ? rounded.toLocaleString() : rounded.toFixed(1);
 }
 
 export function formatPercent(value: number): string {

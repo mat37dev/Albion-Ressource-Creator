@@ -82,7 +82,7 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
         ) : (
           <>
             {/* Résumé global */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <Card className="bg-red-500/10 border-red-500/20">
                 <CardContent className="pt-6">
                   <p className="text-sm text-muted-foreground">Coût total</p>
@@ -92,7 +92,7 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
 
               <Card className="bg-blue-500/10 border-blue-500/20">
                 <CardContent className="pt-6">
-                  <p className="text-sm text-muted-foreground">Revenu total</p>
+                  <p className="text-sm text-muted-foreground">Revenu total (net)</p>
                   <p className="text-2xl font-bold text-blue-500">{formatSilver(result.totalRevenue)}</p>
                 </CardContent>
               </Card>
@@ -121,6 +121,114 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Récapitulatif des coûts et taxes */}
+            <Card className="mb-8 border-orange-500/30 bg-orange-500/5">
+              <CardContent className="pt-4">
+                <p className="text-sm font-semibold text-orange-400 mb-4">Récapitulatif des coûts</p>
+
+                {/* Ligne de détail par poste */}
+                <div className="space-y-2 mb-4">
+                  {/* Coût matériaux brut */}
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Coût matériaux (achat)</span>
+                    <span className="font-medium text-white">
+                      -{formatSilver(result.aggregatedMaterials.reduce((s, m) => s + m.totalCost, 0))}
+                    </span>
+                  </div>
+
+                  {/* Taxe d'achat (ordres d'achat, 2.5%) */}
+                  {result.totalBuyTaxPaid > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block"></span>
+                        Frais mise en vente achat (ordres d&apos;achat, 2.5%)
+                      </span>
+                      <span className="font-medium text-yellow-400">-{formatSilver(result.totalBuyTaxPaid)}</span>
+                    </div>
+                  )}
+
+                  {/* Frais de station */}
+                  {result.totalCraftingFees > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block"></span>
+                        Frais de station de craft
+                      </span>
+                      <span className="font-medium text-purple-400">-{formatSilver(result.totalCraftingFees)}</span>
+                    </div>
+                  )}
+
+                  {/* Taxe de vente */}
+                  {result.totalTaxPaid > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block"></span>
+                        Taxes de vente
+                        <span className="text-xs ml-1">
+                          ({craftBatch.batchState.globalSettings.isPremium ? 'Premium' : 'Standard'} — 4%/6.5% ou 8%/10.5%)
+                        </span>
+                      </span>
+                      <span className="font-medium text-orange-400">-{formatSilver(result.totalTaxPaid)}</span>
+                    </div>
+                  )}
+
+                  <div className="border-t border-white/10 pt-2 flex justify-between items-center text-sm font-semibold">
+                    <span className="text-muted-foreground">Total des coûts et taxes</span>
+                    <span className="text-red-400">
+                      -{formatSilver(
+                        result.aggregatedMaterials.reduce((s, m) => s + m.totalCost, 0)
+                        + result.totalBuyTaxPaid
+                        + result.totalCraftingFees
+                        + result.totalTaxPaid
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Détail par item (taxe vente + frais station) */}
+                <div className="border-t border-white/10 pt-3">
+                  <p className="text-xs text-muted-foreground mb-2">Détail par item crafté</p>
+                  <div className="space-y-1">
+                    {result.itemResults.map((item) => (
+                      <div key={item.batchItemId} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground truncate max-w-[40%]">{item.itemName} ×{item.quantity}</span>
+                        <div className="flex gap-4">
+                          {item.taxPaid > 0 && (
+                            <span className="text-orange-400">
+                              taxe vente: -{formatSilver(item.taxPaid)} ({(item.taxRate * 100).toFixed(1)}%)
+                            </span>
+                          )}
+                          {item.craftingFee > 0 && (
+                            <span className="text-purple-400">
+                              station: -{formatSilver(item.craftingFee)}
+                            </span>
+                          )}
+                          {item.taxPaid === 0 && item.craftingFee === 0 && (
+                            <span className="text-muted-foreground">aucune taxe</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Détail par matériau (taxe d'achat) */}
+                {result.totalBuyTaxPaid > 0 && (
+                  <div className="border-t border-white/10 pt-3 mt-3">
+                    <p className="text-xs text-muted-foreground mb-2">Frais d&apos;ordres d&apos;achat par matériau (2.5%)</p>
+                    <div className="space-y-1">
+                      {result.aggregatedMaterials.filter(m => m.buyTaxPaid > 0).map((mat) => (
+                        <div key={mat.materialId} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{mat.materialName} ×{mat.rrrQuantity} @ {formatSilver(mat.pricePerUnit)}</span>
+                          <span className="text-yellow-400">-{formatSilver(mat.buyTaxPaid)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Profit des registres */}
             {result.journalProfit && result.journalProfit > 0 && (
@@ -151,6 +259,7 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                     <TableHead className="text-right">Qté</TableHead>
                     <TableHead className="text-right">Coût mat.</TableHead>
                     <TableHead className="text-right">Prix net/unité</TableHead>
+                    <TableHead className="text-right">Taxe vente</TableHead>
                     <TableHead>Ville vente</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead className="text-right">Profit/unité</TableHead>
@@ -170,15 +279,23 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                       <TableCell className="text-right">{item.quantity}</TableCell>
                       <TableCell className="text-right">{formatSilver(item.materialCost)}</TableCell>
                       <TableCell className="text-right">{formatSilver(item.netSellPrice / item.quantity)}</TableCell>
+                      <TableCell className="text-right">
+                        <span className="text-orange-400 text-sm">
+                          -{formatSilver(item.taxPaid)}
+                          <span className="text-xs text-muted-foreground ml-1">({(item.taxRate * 100).toFixed(1)}%)</span>
+                        </span>
+                      </TableCell>
                       <TableCell>{item.sellCity}</TableCell>
                       <TableCell>
                         <span className={`text-xs px-2 py-0.5 rounded font-medium ${
                           item.sellType === 'direct' ? 'bg-blue-500/20 text-blue-400' :
                           item.sellType === 'blackmarket' ? 'bg-purple-500/20 text-purple-400' :
+                          item.sellType === 'exchange' ? 'bg-yellow-500/20 text-yellow-400' :
                           'bg-green-500/20 text-green-400'
                         }`}>
                           {item.sellType === 'direct' ? 'Direct' :
-                           item.sellType === 'blackmarket' ? 'BM' : 'Ordre'}
+                           item.sellType === 'blackmarket' ? 'BM' :
+                           item.sellType === 'exchange' ? 'Échange' : 'Ordre'}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">{formatSilver(item.unitProfit)}</TableCell>
@@ -199,10 +316,12 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Matériau</TableHead>
-                    <TableHead className="text-right">Qté totale</TableHead>
-                    <TableHead className="text-right">Qté total RRR</TableHead>
+                    <TableHead>Type achat</TableHead>
+                    <TableHead className="text-right">Qté RRR</TableHead>
                     <TableHead className="text-right">Prix unitaire</TableHead>
-                    <TableHead className="text-right">Coût Total RRR</TableHead>
+                    <TableHead className="text-right">Coût achat</TableHead>
+                    <TableHead className="text-right">Frais ordre (2.5%)</TableHead>
+                    <TableHead className="text-right">Coût total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -214,12 +333,30 @@ export function ResultsTab({ craftBatch }: ResultsTabProps) {
                           <span className="font-medium">{mat.materialName}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">{mat.totalQuantity}</TableCell>
+                      <TableCell>
+                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                          mat.buyType === 'order' ? 'bg-yellow-500/20 text-yellow-400' :
+                          mat.buyType === 'exchange' ? 'bg-gray-500/20 text-gray-400' :
+                          'bg-blue-500/20 text-blue-400'
+                        }`}>
+                          {mat.buyType === 'order' ? 'Ordre' :
+                           mat.buyType === 'exchange' ? 'Échange' : 'Direct'}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-right font-semibold text-albion-gold">
                         {mat.rrrQuantity}
                       </TableCell>
                       <TableCell className="text-right">{formatSilver(mat.pricePerUnit)}</TableCell>
-                      <TableCell className="text-right font-bold">{formatSilver(mat.totalCost)}</TableCell>
+                      <TableCell className="text-right">{formatSilver(mat.totalCost)}</TableCell>
+                      <TableCell className="text-right">
+                        {mat.buyTaxPaid > 0
+                          ? <span className="text-yellow-400">-{formatSilver(mat.buyTaxPaid)}</span>
+                          : <span className="text-muted-foreground">—</span>
+                        }
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatSilver(mat.totalCost + mat.buyTaxPaid)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

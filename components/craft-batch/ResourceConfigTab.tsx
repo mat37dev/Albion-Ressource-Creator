@@ -41,7 +41,7 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
 
   const handleLoadBestPrices = async () => {
     setLoadingPrices(true);
-    await craftBatch.fetchAllPrices();
+    await craftBatch.fetchBuyPrices();
     setLoadingPrices(false);
   };
 
@@ -79,8 +79,14 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
   };
 
   // Handle buy type change with dynamic price update
-  const handleTypeChange = async (materialId: string, newType: 'buy' | 'order') => {
+  const handleTypeChange = async (materialId: string, newType: 'buy' | 'order' | 'exchange') => {
     craftBatch.updateMaterialConfig(materialId, { buyType: newType });
+
+    if (newType === 'exchange') {
+      // Échange : prix mis à 0, l'utilisateur entre son propre prix
+      craftBatch.updateMaterialConfig(materialId, { pricePerUnit: 0 });
+      return;
+    }
 
     // Update price based on cached data
     const prices = craftBatch.batchState.priceCache.get(materialId) || [];
@@ -182,7 +188,7 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
                       <TableCell>
                         <Select
                           value={material.buyType}
-                          onValueChange={(type) => handleTypeChange(material.materialId, type as "buy" | "order")}
+                          onValueChange={(type) => handleTypeChange(material.materialId, type as "buy" | "order" | "exchange")}
                         >
                           <SelectTrigger className="w-36">
                             <SelectValue />
@@ -190,6 +196,7 @@ export function ResourceConfigTab({ craftBatch }: ResourceConfigTabProps) {
                           <SelectContent>
                             <SelectItem value="buy">Achat direct</SelectItem>
                             <SelectItem value="order">Ordre d&apos;achat</SelectItem>
+                            <SelectItem value="exchange">Échange</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>

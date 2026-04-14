@@ -71,15 +71,16 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
     });
   };
 
-  // Load best sell prices for ALL items — délègue à fetchAllPrices qui batch + auto-sélectionne
-  const handleLoadAllBestPrices = () => craftBatch.fetchAllPrices();
+  // Load best sell prices for items only
+  const handleLoadAllBestPrices = () => craftBatch.fetchSellPrices();
 
   // Retourne le prix depuis le cache si disponible, sinon fetch l'API
   const getPriceForCity = async (
     itemId: string,
     city: SellCity,
-    sellType: 'direct' | 'order' | 'blackmarket'
+    sellType: 'direct' | 'order' | 'blackmarket' | 'exchange'
   ): Promise<number> => {
+    if (sellType === 'exchange') return 0;
     const useBuyPrice = city === "Black Market" || sellType === "direct" || sellType === "blackmarket";
     const cached = craftBatch.batchState.priceCache.get(itemId);
     if (cached) {
@@ -110,10 +111,15 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
     }
   };
 
-  const handleTypeChange = async (batchItemId: string, itemId: string, newType: 'direct' | 'order') => {
+  const handleTypeChange = async (batchItemId: string, itemId: string, newType: 'direct' | 'order' | 'exchange') => {
     const batchItem = craftBatch.batchState.items.find(i => i.id === batchItemId);
     if (!batchItem) return;
     craftBatch.updateItemConfig(batchItemId, { sellType: newType });
+    if (newType === 'exchange') {
+      // Échange : prix mis à 0, l'utilisateur entre son propre prix
+      craftBatch.updateItemConfig(batchItemId, { customSellPrice: 0 });
+      return;
+    }
     try {
       const newPrice = await getPriceForCity(itemId, batchItem.sellCity, newType);
       craftBatch.updateItemConfig(batchItemId, { customSellPrice: newPrice });
@@ -263,7 +269,7 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
                     <TableCell>
                       <Select
                         value={item.sellType}
-                        onValueChange={(type) => handleTypeChange(item.id, item.itemId, type as 'direct' | 'order')}
+                        onValueChange={(type) => handleTypeChange(item.id, item.itemId, type as 'direct' | 'order' | 'exchange')}
                       >
                         <SelectTrigger className="w-36">
                           <SelectValue />
@@ -271,6 +277,7 @@ export function ItemSelectionTab({ craftBatch }: ItemSelectionTabProps) {
                         <SelectContent>
                           <SelectItem value="direct">Vente directe</SelectItem>
                           <SelectItem value="order">Ordre de vente</SelectItem>
+                          <SelectItem value="exchange">Échange</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>

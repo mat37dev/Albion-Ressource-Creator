@@ -210,6 +210,60 @@ export function useCraftBatch() {
     }));
   }, []);
 
+  // Fetch prices pour les items de vente uniquement
+  const fetchSellPrices = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const outputItemIds = batchState.items.map(i => i.itemId);
+      if (outputItemIds.length === 0) return;
+
+      const allPrices = await fetchClientPrices({ items: outputItemIds });
+
+      const priceMap = new Map<string, PriceData[]>(batchState.priceCache);
+      for (const price of allPrices) {
+        if (!priceMap.has(price.item_id)) {
+          priceMap.set(price.item_id, []);
+        }
+        priceMap.get(price.item_id)!.push(price);
+      }
+
+      setBatchState(prev => ({ ...prev, priceCache: priceMap }));
+      autoSelectBestSellPrices(priceMap);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch sell prices");
+    } finally {
+      setLoading(false);
+    }
+  }, [batchState.items, batchState.priceCache]);
+
+  // Fetch prices pour les matériaux d'achat uniquement
+  const fetchBuyPrices = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const materialIds = Object.keys(batchState.materials);
+      if (materialIds.length === 0) return;
+
+      const allPrices = await fetchClientPrices({ items: materialIds });
+
+      const priceMap = new Map<string, PriceData[]>(batchState.priceCache);
+      for (const price of allPrices) {
+        if (!priceMap.has(price.item_id)) {
+          priceMap.set(price.item_id, []);
+        }
+        priceMap.get(price.item_id)!.push(price);
+      }
+
+      setBatchState(prev => ({ ...prev, priceCache: priceMap }));
+      autoSelectBestBuyPrices(priceMap);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch buy prices");
+    } finally {
+      setLoading(false);
+    }
+  }, [batchState.materials, batchState.priceCache]);
+
   // Fetch prices pour tous les items + matériaux
   const fetchAllPrices = useCallback(async () => {
     setLoading(true);
@@ -232,7 +286,8 @@ export function useCraftBatch() {
       }
 
       setBatchState(prev => ({ ...prev, priceCache: priceMap }));
-      autoSelectBestPrices(priceMap);
+      autoSelectBestSellPrices(priceMap);
+      autoSelectBestBuyPrices(priceMap);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch prices");
     } finally {
@@ -240,14 +295,17 @@ export function useCraftBatch() {
     }
   }, [batchState.items, batchState.materials]);
 
-  // Sélection automatique des meilleures villes/prix
-  const autoSelectBestPrices = useCallback((priceMap: Map<string, PriceData[]>) => {
+  // Sélection automatique des meilleurs prix de vente (items uniquement)
+  const autoSelectBestSellPrices = useCallback((priceMap: Map<string, PriceData[]>) => {
     setBatchState(prev => {
       const { isPremium } = prev.globalSettings;
       const directTax = isPremium ? 0.04 : 0.08;
       const orderTax  = isPremium ? 0.065 : 0.105;
 
       const updatedItems = prev.items.map(item => {
+        // Ne pas écraser les items en mode "échange"
+        if (item.sellType === 'exchange') return item;
+
         const prices = priceMap.get(item.itemId) || [];
 
         const bestDirect = prices
@@ -279,8 +337,18 @@ export function useCraftBatch() {
         return item;
       });
 
+      return { ...prev, items: updatedItems };
+    });
+  }, []);
+
+  // Sélection automatique des meilleurs prix d'achat (matériaux uniquement)
+  const autoSelectBestBuyPrices = useCallback((priceMap: Map<string, PriceData[]>) => {
+    setBatchState(prev => {
       const updatedMaterials = { ...prev.materials };
       for (const [matId, matReq] of Object.entries(updatedMaterials)) {
+        // Ne pas écraser les matériaux en mode "échange"
+        if (matReq.buyType === 'exchange') continue;
+
         const prices = priceMap.get(matId) || [];
         const bestBuyPrice = prices
           .filter(p => p.sell_price_min > 0)
@@ -295,7 +363,7 @@ export function useCraftBatch() {
         }
       }
 
-      return { ...prev, items: updatedItems, materials: updatedMaterials };
+      return { ...prev, materials: updatedMaterials };
     });
   }, []);
 
@@ -310,5 +378,7 @@ export function useCraftBatch() {
     updateMaterialConfig,
     aggregateMaterials,
     fetchAllPrices,
+    fetchSellPrices,
+    fetchBuyPrices,
   };
 }
