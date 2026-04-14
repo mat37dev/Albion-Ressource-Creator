@@ -6,13 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatSilver(amount: number): string {
-  if (amount >= 1_000_000 || amount <= -1_000_000) {
-    return Math.round(amount).toLocaleString();
-  }
-  if (amount >= 1_000 || amount <= -1_000) {
-    return `${Math.round(amount / 1_000)}k`;
-  }
-  return Math.round(amount).toLocaleString();
+  return Math.round(amount).toLocaleString("fr-FR");
 }
 
 export function formatPercent(value: number): string {
